@@ -29,15 +29,17 @@ The kit deliberately does not own application domain behavior such as FRP
 process management, ADM Gateway/MCP logic, IME repair, or CodexPro workspace
 processes.
 
-## Install during local migration
+## Install
 
-~~~
-require github.com/wanstu/wails-desktop-kit v0.0.0
-
-replace github.com/wanstu/wails-desktop-kit => ../wails-desktop-kit
+~~~powershell
+go get github.com/wanstu/wails-desktop-kit@v0.1.2
 ~~~
 
-After the kit has tagged releases, consumers should use a normal version.
+v0.1.2 is the last stable release. Runtime hardening on this branch is pending
+release; consumers validating it should pin the reviewed commit and its Go
+pseudo-version. Do not commit a local replace directive.
+
+See [hardening and migration notes](docs/runtime-hardening.md) for behavior changes.
 
 ## Desktop shell example
 
@@ -123,8 +125,8 @@ With ui.Mount, application HTML can load shared styles directly:
 
 HideSafe is the default framework policy.
 
-- Windows: hide-on-close is safe.
-- macOS: hide-on-close is safe.
+- Windows: hide-on-close requires confirmed tray availability.
+- macOS: hide-on-close requires successful native status item creation.
 - Linux: hide-on-close is not enabled automatically yet.
 
 Linux tray availability depends on the desktop session's StatusNotifier host.
@@ -133,6 +135,10 @@ runtime tray-host detection can be implemented once in this kit without
 changing consumer applications.
 
 Applications can explicitly choose HideAlways or HideNever when required.
+HideAlways still requires a running tray backend; on Linux it assumes the user
+has a visible StatusNotifier host. Autostart begins visible and hides only after
+readiness; a manual show cancels that pending hide. Tray failure restores the
+window.
 
 ## Icon tooling
 

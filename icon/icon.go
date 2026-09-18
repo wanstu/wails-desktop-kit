@@ -13,6 +13,10 @@ import (
 	"path/filepath"
 )
 
+// Limits bound allocations before image decoding or output allocation.
+const MaxInputPixels = 16 * 1024 * 1024
+const MaxCanvasSize = 4096
+
 // Options controls icon normalization.
 type Options struct {
 	CanvasSize     int
@@ -34,17 +38,34 @@ func DefaultOptions() Options {
 // NormalizeFile reads a source PNG/JPEG/GIF image, normalizes visible artwork
 // into a square transparent PNG canvas, and writes outputPath.
 func NormalizeFile(inputPath, outputPath string, opts Options) error {
+	opts, err := normalizeOptions(opts)
+	if err != nil {
+		return err
+	}
 	in, err := os.Open(inputPath)
 	if err != nil {
 		return fmt.Errorf("icon: open input: %w", err)
 	}
 	defer in.Close()
 
+	config, _, err := image.DecodeConfig(in)
+	if err != nil {
+		return fmt.Errorf("icon: decode image header: %w", err)
+	}
+	if err := validateDimensions(config.Width, config.Height); err != nil {
+		return err
+	}
+	if _, err := in.Seek(0, 0); err != nil {
+		return err
+	}
 	src, _, err := image.Decode(in)
 	if err != nil {
 		return fmt.Errorf("icon: decode input: %w", err)
 	}
 
+	if err := in.Close(); err != nil {
+		return fmt.Errorf("icon: close input: %w", err)
+	}
 	out, err := Normalize(src, opts)
 	if err != nil {
 		return err
@@ -52,13 +73,33 @@ func NormalizeFile(inputPath, outputPath string, opts Options) error {
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
 		return fmt.Errorf("icon: create output directory: %w", err)
 	}
-	f, err := os.Create(outputPath)
+	f, err := os.CreateTemp(filepath.Dir(outputPath), ".desktopkit-icon-*.png")
 	if err != nil {
 		return fmt.Errorf("icon: create output: %w", err)
 	}
+	defer os.Remove(f.Name())
 	defer f.Close()
+	if err := f.Chmod(0o644); err != nil {
+		return err
+	}
 	if err := png.Encode(f, out); err != nil {
 		return fmt.Errorf("icon: encode png: %w", err)
+	}
+	if err := f.Sync(); err != nil {
+		return fmt.Errorf("icon: flush output: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("icon: close output: %w", err)
+	}
+	if err := os.Rename(f.Name(), outputPath); err != nil {
+		return fmt.Errorf("icon: replace output: %w", err)
+	}
+	return nil
+}
+
+func validateDimensions(width, height int) error {
+	if width <= 0 || height <= 0 || width > MaxInputPixels/height {
+		return fmt.Errorf("icon: input must contain between 1 and %d pixels", MaxInputPixels)
 	}
 	return nil
 }
@@ -76,6 +117,9 @@ func Normalize(src image.Image, opts Options) (*image.NRGBA, error) {
 	sourceBounds := src.Bounds()
 	if sourceBounds.Empty() {
 		return nil, fmt.Errorf("icon: source image is empty")
+	}
+	if err := validateDimensions(sourceBounds.Dx(), sourceBounds.Dy()); err != nil {
+		return nil, err
 	}
 	content := sourceBounds
 	if opts.TrimAlpha {
@@ -111,10 +155,10 @@ func normalizeOptions(opts Options) (Options, error) {
 	if opts.Fill == 0 {
 		opts.Fill = defaults.Fill
 	}
-	if opts.CanvasSize <= 0 {
-		return Options{}, fmt.Errorf("icon: canvas size must be positive")
+	if opts.CanvasSize <= 0 || opts.CanvasSize > MaxCanvasSize {
+		return Options{}, fmt.Errorf("icon: canvas size must be between 1 and 4096")
 	}
-	if opts.Fill <= 0 || opts.Fill > 1 {
+	if math.IsNaN(opts.Fill) || math.IsInf(opts.Fill, 0) || opts.Fill <= 0 || opts.Fill > 1 {
 		return Options{}, fmt.Errorf("icon: fill must be greater than 0 and at most 1")
 	}
 	return opts, nil

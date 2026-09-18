@@ -14,12 +14,14 @@ type Controller struct {
 	ctx                               context.Context
 	ready, stopped, quitting, closing bool
 	allowHide, pendingHide            bool
+	desiredVisible                    bool
+	visibilityVersion                 uint64
 	show, hide, quit                  func(context.Context)
 }
 
 func newController(allowHide, startHidden bool) *Controller {
 	return &Controller{
-		allowHide: allowHide, pendingHide: startHidden,
+		allowHide: allowHide, pendingHide: startHidden, desiredVisible: true,
 		show: func(ctx context.Context) { wailsruntime.WindowShow(ctx); wailsruntime.WindowUnminimise(ctx) },
 		hide: wailsruntime.WindowHide, quit: wailsruntime.Quit,
 	}
@@ -43,21 +45,47 @@ func (c *Controller) ShowWindow() {
 	}
 	c.mu.Lock()
 	c.pendingHide = false
-	ctx, show, stopped := c.ctx, c.show, c.stopped
+	c.desiredVisible = true
+	c.visibilityVersion++
 	c.mu.Unlock()
-	if ctx != nil && show != nil && !stopped {
-		show(ctx)
-	}
+	c.applyVisibility()
 }
 
 // HideWindow only hides a recoverable window under the configured policy.
 func (c *Controller) HideWindow() {
 	c.mu.Lock()
-	ctx, hide := c.ctx, c.hide
-	allowed := c.allowHide && c.ready && !c.stopped && !c.quitting
+	if !c.allowHide || !c.ready || c.stopped || c.quitting {
+		c.mu.Unlock()
+		return
+	}
+	c.desiredVisible = false
+	c.visibilityVersion++
 	c.mu.Unlock()
-	if allowed && ctx != nil && hide != nil {
-		hide(ctx)
+	c.applyVisibility()
+}
+
+// Do not hold mu across native calls: Wails may dispatch them to its main
+// thread, which can concurrently invoke a lifecycle callback. If an older
+// operation finishes after a newer request, apply the latest intent again.
+func (c *Controller) applyVisibility() {
+	for {
+		c.mu.Lock()
+		ctx, version, stopped := c.ctx, c.visibilityVersion, c.stopped
+		apply := c.hide
+		if c.desiredVisible {
+			apply = c.show
+		}
+		c.mu.Unlock()
+		if stopped || ctx == nil || apply == nil {
+			return
+		}
+		apply(ctx)
+		c.mu.Lock()
+		current := version == c.visibilityVersion
+		c.mu.Unlock()
+		if current {
+			return
+		}
 	}
 }
 func (c *Controller) Quit() {
@@ -104,18 +132,25 @@ func (c *Controller) trayAvailable() {
 		return
 	}
 	c.ready = true
-	pending := c.pendingHide
+	hide := c.pendingHide && c.allowHide && !c.quitting
 	c.pendingHide = false
+	if hide {
+		c.desiredVisible = false
+		c.visibilityVersion++
+	}
 	c.mu.Unlock()
-	if pending {
-		c.HideWindow()
+	if hide {
+		c.applyVisibility()
 	}
 }
 func (c *Controller) trayFailed() {
 	c.mu.Lock()
 	c.ready = false
+	c.pendingHide = false
+	c.desiredVisible = true
+	c.visibilityVersion++
 	c.mu.Unlock()
-	c.ShowWindow()
+	c.applyVisibility()
 }
 func (c *Controller) stop() {
 	c.mu.Lock()

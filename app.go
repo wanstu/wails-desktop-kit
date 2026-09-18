@@ -140,6 +140,9 @@ func validateConfig(cfg Config) error {
 		if err != nil || image.Width <= 0 || image.Height <= 0 || image.Width > 4096 || image.Height > 4096 {
 			return fmt.Errorf("desktop-kit: tray icon must be a valid PNG no larger than 4096 pixels per side")
 		}
+		if _, err := png.Decode(bytes.NewReader(cfg.Tray.Icon)); err != nil {
+			return fmt.Errorf("desktop-kit: decode tray PNG: %w", err)
+		}
 	}
 	if cfg.Tray.AutoStart != nil && !cfg.Tray.Enabled {
 		return fmt.Errorf("desktop-kit: tray AutoStart requires tray to be enabled")

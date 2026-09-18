@@ -14,6 +14,9 @@ func (m *Manager) supported() bool { return true }
 
 func (m *Manager) linuxPath() (string, error) {
 	configHome := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME"))
+	if configHome != "" && !filepath.IsAbs(configHome) {
+		return "", fmt.Errorf("autostart: XDG_CONFIG_HOME must be absolute")
+	}
 	if configHome == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -29,8 +32,14 @@ func (m *Manager) linuxContent() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if strings.ContainsAny(executable, "=\x00\r\n") {
+		return nil, fmt.Errorf("autostart: unsupported character in executable path")
+	}
 	parts := []string{quoteDesktopExecArg(executable)}
 	for _, arg := range m.args() {
+		if strings.ContainsAny(arg, "\x00\r\n") {
+			return nil, fmt.Errorf("autostart: arguments must not contain NUL or line breaks")
+		}
 		parts = append(parts, quoteDesktopExecArg(arg))
 	}
 	comment := strings.TrimSpace(m.config.Comment)
@@ -97,11 +106,13 @@ func quoteDesktopExecArg(value string) string {
 		"`", "\\`",
 		"$", "\\$",
 	)
-	return "\"" + replacer.Replace(value) + "\""
+	return escapeDesktopValue("\"" + replacer.Replace(value) + "\"")
 }
 
 func escapeDesktopValue(value string) string {
 	value = strings.ReplaceAll(value, "\\", "\\\\")
 	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strings.ReplaceAll(value, "\r", "\\r")
+	value = strings.ReplaceAll(value, "\t", "\\t")
 	return value
 }
