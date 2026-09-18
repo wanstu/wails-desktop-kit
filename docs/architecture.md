@@ -100,5 +100,7 @@ single-Wails-application case. It does not attempt to model arbitrary product
 pre-build/post-build graphs.
 
 Products with extra artifacts can keep custom orchestration while reusing the
-Go/UI packages. Lower-level composite actions and the planned desktopkit CLI
-can be added after migration experience shows the right extension points.
+Go/UI packages. The reusable workflow also accepts optional repository-root
+Windows and Unix build wrappers, allowing product-specific validation and
+resource preparation without duplicating the platform matrix, artifact staging,
+checksums, or Release publishing.

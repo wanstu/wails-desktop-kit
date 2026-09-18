@@ -159,7 +159,7 @@ A standard Wails app can call:
 ~~~yaml
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.1
     with:
       app-name: frp-client-manager
       desktop-dir: cmd/frp-client-desktop
@@ -173,7 +173,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.1
     with:
       app-name: frp-client-manager
       desktop-dir: cmd/frp-client-desktop
@@ -183,6 +183,20 @@ jobs:
 The workflow assumes wails.json outputfilename equals app-name. It builds
 Windows amd64, Linux amd64 with webkit2_41, and macOS universal. It stages
 normalized assets and SHA256 files.
+
+Projects with their own validated build wrappers can keep them while reusing the
+shared matrix and release pipeline:
+
+~~~yaml
+with:
+  app-name: frp-client-manager
+  desktop-dir: cmd/frp-client-desktop
+  build-command-windows: ./scripts/build.ps1
+  build-command-unix: bash ./scripts/build.sh
+~~~
+
+The wrapper runs from the repository root. Leave these inputs empty to use the
+standard direct Wails build.
 
 Complex products such as ADM (desktop plus multi-platform CLI) and CodexPro+
 (extra core build) should keep product-specific orchestration and reuse

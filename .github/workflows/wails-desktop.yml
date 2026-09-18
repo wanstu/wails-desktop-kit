@@ -33,6 +33,16 @@ on:
         required: false
         default: "go vet ./..."
         type: string
+      build-command-windows:
+        description: "Optional repository-root Windows build wrapper. Empty uses direct wails build."
+        required: false
+        default: ""
+        type: string
+      build-command-unix:
+        description: "Optional repository-root Linux/macOS build wrapper. Empty uses direct wails build."
+        required: false
+        default: ""
+        type: string
       publish-release:
         description: "Publish a GitHub Release after all platform builds"
         required: false
@@ -85,27 +95,39 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ inputs.wails-version }}
 
       - name: Test
+        if: inputs.test-command != ''
         run: ${{ inputs.test-command }}
 
       - name: Vet
+        if: inputs.vet-command != ''
         run: ${{ inputs.vet-command }}
 
+      - name: Build Windows with product wrapper
+        if: runner.os == 'Windows' && inputs.build-command-windows != ''
+        shell: pwsh
+        run: ${{ inputs.build-command-windows }}
+
       - name: Build Windows
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && inputs.build-command-windows == ''
         shell: pwsh
         run: |
           Set-Location '${{ inputs.desktop-dir }}'
           wails build -clean
 
+      - name: Build Unix with product wrapper
+        if: runner.os != 'Windows' && inputs.build-command-unix != ''
+        shell: bash
+        run: ${{ inputs.build-command-unix }}
+
       - name: Build Linux
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && inputs.build-command-unix == ''
         shell: bash
         run: |
           cd '${{ inputs.desktop-dir }}'
           wails build -clean -tags webkit2_41
 
       - name: Build macOS universal
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && inputs.build-command-unix == ''
         shell: bash
         run: |
           cd '${{ inputs.desktop-dir }}'
