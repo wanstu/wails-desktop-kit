@@ -52,6 +52,9 @@ jobs:
 
       - name: macOS Wails and tray lifecycle smoke
         if: runner.os == 'macOS'
+        # Match the framework linked by Wails' macOS build command.
+        env:
+          CGO_LDFLAGS: "-framework UniformTypeIdentifiers"
         run: go run -tags production ./.github/smokeapp
         timeout-minutes: 2
 
