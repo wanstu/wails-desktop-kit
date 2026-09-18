@@ -1,8 +1,10 @@
 package desktopkit
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"image/png"
 	"io/fs"
 
 	"github.com/wailsapp/wails/v2"
@@ -16,6 +18,10 @@ type Hooks struct {
 	Startup  func(context.Context)
 	DomReady func(context.Context)
 	Shutdown func(context.Context)
+	// BeforeClose returns true to cancel closing or quitting.
+	BeforeClose func(context.Context) bool
+	// TrayError reports initialization or runtime failure after restoring the window.
+	TrayError func(context.Context, error)
 }
 
 // Config describes a Wails desktop application shell.
@@ -32,6 +38,8 @@ type Config struct {
 
 	// SingleInstance enables Wails' cross-platform single-instance lock.
 	SingleInstance bool
+	// SecondInstance overrides the default show-window behavior and preserves launch arguments.
+	SecondInstance func(*Controller, options.SecondInstanceData)
 }
 
 // Run starts a Wails application using the common desktop-kit shell.
@@ -42,11 +50,16 @@ func Run(cfg Config) error {
 
 	window := cfg.Window.normalized()
 	trayCfg := cfg.Tray.normalized(cfg.Title)
-	controller := &Controller{}
-	tray := newTrayManager(controller, trayCfg)
-
 	hideOnClose := canHideCurrentPlatform(window.HidePolicy, trayCfg.Enabled && traySupported)
 	startHidden := cfg.Launch.AutoStart && window.StartHiddenOnAutoStart && hideOnClose
+	controller := newController(hideOnClose, startHidden)
+	tray := newTrayManager(controller, trayCfg, func(err error) {
+		if cfg.Hooks.TrayError != nil {
+			cfg.Hooks.TrayError(controller.Context(), err)
+		} else {
+			controller.ShowError("托盘不可用，窗口已恢复", err)
+		}
+	})
 
 	appOptions := &options.App{
 		Title:             cfg.Title,
@@ -54,9 +67,16 @@ func Run(cfg Config) error {
 		Height:            window.Height,
 		MinWidth:          window.MinWidth,
 		MinHeight:         window.MinHeight,
-		StartHidden:       startHidden,
-		HideWindowOnClose: hideOnClose,
-		AssetServer:       &assetserver.Options{Assets: cfg.Assets},
+		StartHidden:       false,
+		HideWindowOnClose: false,
+		OnBeforeClose: func(ctx context.Context) bool {
+			if controller.beforeClose(ctx, cfg.Hooks.BeforeClose) {
+				return true
+			}
+			tray.Shutdown(ctx)
+			return false
+		},
+		AssetServer: &assetserver.Options{Assets: cfg.Assets},
 		BackgroundColour: &options.RGBA{
 			R: window.Background.R,
 			G: window.Background.G,
@@ -65,7 +85,6 @@ func Run(cfg Config) error {
 		},
 		OnStartup: func(ctx context.Context) {
 			controller.setContext(ctx)
-			tray.Startup(ctx)
 			if cfg.Hooks.Startup != nil {
 				cfg.Hooks.Startup(ctx)
 			}
@@ -79,6 +98,7 @@ func Run(cfg Config) error {
 		},
 		OnShutdown: func(ctx context.Context) {
 			tray.Shutdown(ctx)
+			controller.stop()
 			if cfg.Hooks.Shutdown != nil {
 				cfg.Hooks.Shutdown(ctx)
 			}
@@ -89,8 +109,12 @@ func Run(cfg Config) error {
 	if cfg.SingleInstance {
 		appOptions.SingleInstanceLock = &options.SingleInstanceLock{
 			UniqueId: cfg.ID,
-			OnSecondInstanceLaunch: func(_ options.SecondInstanceData) {
-				controller.ShowWindow()
+			OnSecondInstanceLaunch: func(data options.SecondInstanceData) {
+				if cfg.SecondInstance != nil {
+					cfg.SecondInstance(controller, data)
+				} else {
+					controller.ShowWindow()
+				}
 			},
 		}
 	}
@@ -110,6 +134,12 @@ func validateConfig(cfg Config) error {
 	}
 	if cfg.Tray.Enabled && len(cfg.Tray.Icon) == 0 {
 		return fmt.Errorf("desktop-kit: tray icon is required when tray is enabled")
+	}
+	if cfg.Tray.Enabled {
+		image, err := png.DecodeConfig(bytes.NewReader(cfg.Tray.Icon))
+		if err != nil || image.Width <= 0 || image.Height <= 0 || image.Width > 4096 || image.Height > 4096 {
+			return fmt.Errorf("desktop-kit: tray icon must be a valid PNG no larger than 4096 pixels per side")
+		}
 	}
 	if cfg.Tray.AutoStart != nil && !cfg.Tray.Enabled {
 		return fmt.Errorf("desktop-kit: tray AutoStart requires tray to be enabled")

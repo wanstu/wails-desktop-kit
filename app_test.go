@@ -1,6 +1,9 @@
 package desktopkit
 
 import (
+	"bytes"
+	"image"
+	"image/png"
 	"testing"
 	"testing/fstest"
 )
@@ -22,6 +25,14 @@ func TestValidateConfig(t *testing.T) {
 	}
 
 	withTray.Tray.Icon = []byte{1}
+	if err := validateConfig(withTray); err == nil {
+		t.Fatal("expected invalid PNG error")
+	}
+	var icon bytes.Buffer
+	if err := png.Encode(&icon, image.NewNRGBA(image.Rect(0, 0, 16, 16))); err != nil {
+		t.Fatal(err)
+	}
+	withTray.Tray.Icon = icon.Bytes()
 	if err := validateConfig(withTray); err != nil {
 		t.Fatalf("valid tray config: %v", err)
 	}
