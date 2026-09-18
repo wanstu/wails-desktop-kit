@@ -63,6 +63,16 @@ desktopkit/ asset prefix and delegates all other files to the application.
 The CSS is component-oriented rather than page-oriented. Products keep full
 ownership of their screen composition and information architecture.
 
+## icon package and CLI
+
+The icon package owns transparent-margin trimming, square canvas fitting,
+centering, and PNG generation that was previously duplicated in PowerShell
+scripts. cmd/desktopkit exposes it through the cross-platform `desktopkit icon`
+command.
+
+Build and packaging CLI commands should only be added after consumer migrations
+show stable inputs and extension points.
+
 ## Tray extension model
 
 The framework owns native tray lifecycle, OS-thread pinning, standard

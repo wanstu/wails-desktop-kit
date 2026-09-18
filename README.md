@@ -134,6 +134,24 @@ changing consumer applications.
 
 Applications can explicitly choose HideAlways or HideNever when required.
 
+## Icon tooling
+
+The cross-platform CLI replaces duplicated PowerShell/System.Drawing icon normalization scripts from the source projects.
+
+Install from the repository:
+
+~~~powershell
+go install ./cmd/desktopkit
+~~~
+
+Normalize application, window, or tray artwork to a square transparent PNG:
+
+~~~powershell
+desktopkit icon --input assets/icons/app.png --output build/appicon.png --canvas 1024 --fill 0.94
+~~~
+
+By default the command trims transparent margins before fitting the visible artwork. It runs on Windows, Linux, and macOS without System.Drawing.
+
 ## Reusable GitHub workflow
 
 A standard Wails app can call:
@@ -141,7 +159,7 @@ A standard Wails app can call:
 ~~~yaml
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.0
     with:
       app-name: frp-client-manager
       desktop-dir: cmd/frp-client-desktop
@@ -155,7 +173,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.0
     with:
       app-name: frp-client-manager
       desktop-dir: cmd/frp-client-desktop
@@ -178,7 +196,6 @@ workflow.
 3. Migrate AI Dev Manager to validate extension points.
 4. Refine UI components from both migrated products.
 5. Migrate IME Lock v2 and CodexPro+.
-6. Add a cross-platform desktopkit build/icon/package CLI after runtime APIs
-   settle.
+6. Extend the desktopkit CLI from icon normalization to build/package helpers.
 
 See docs/architecture.md and docs/frp-migration.md.
