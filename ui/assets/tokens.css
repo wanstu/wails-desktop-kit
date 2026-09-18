@@ -1,0 +1,44 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+  font-synthesis: none;
+
+  --dk-bg-app: #f6f7f9;
+  --dk-bg-elevated: #ffffff;
+  --dk-bg-subtle: #f8fafc;
+  --dk-bg-muted: #f1f5f9;
+
+  --dk-text: #172033;
+  --dk-text-secondary: #647286;
+  --dk-text-muted: #8a96a6;
+  --dk-border: #dde3eb;
+  --dk-border-subtle: #edf0f4;
+
+  --dk-primary: #2563eb;
+  --dk-primary-hover: #1d4ed8;
+  --dk-success: #16885f;
+  --dk-success-bg: #e7f7ef;
+  --dk-warning: #a85a1f;
+  --dk-warning-bg: #fff2e2;
+  --dk-danger: #b42318;
+  --dk-danger-bg: #fff0f0;
+
+  --dk-radius-xs: 6px;
+  --dk-radius-sm: 9px;
+  --dk-radius-md: 12px;
+  --dk-radius-lg: 16px;
+
+  --dk-shadow-panel: 0 8px 24px rgba(15, 23, 42, .055);
+  --dk-shadow-dialog: 0 24px 80px rgba(15, 23, 42, .2);
+
+  --dk-space-1: 4px;
+  --dk-space-2: 8px;
+  --dk-space-3: 12px;
+  --dk-space-4: 16px;
+  --dk-space-5: 20px;
+  --dk-space-6: 24px;
+  --dk-space-8: 32px;
+
+  --dk-sidebar-width: 224px;
+  --dk-transition: .16s ease;
+}

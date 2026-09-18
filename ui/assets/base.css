@@ -1,0 +1,64 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--dk-bg-app);
+  color: var(--dk-text);
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--dk-primary);
+  outline-offset: 2px;
+}
+
+.dk-app-shell {
+  min-height: 100vh;
+  background: var(--dk-bg-app);
+}
+
+.dk-content {
+  min-width: 0;
+  padding: var(--dk-space-6);
+}
+
+.dk-stack {
+  display: grid;
+  gap: var(--dk-space-4);
+}
+
+.dk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--dk-space-3);
+}
+
+.dk-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dk-space-4);
+}
+
+.dk-hidden {
+  display: none !important;
+}
+
+.dk-muted {
+  color: var(--dk-text-secondary);
+}

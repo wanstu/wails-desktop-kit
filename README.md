@@ -1,0 +1,184 @@
+# Wails Desktop Kit
+
+A shared desktop application foundation extracted from IME Lock v2, FRP Client
+Manager, AI Dev Manager, and CodexPro+.
+
+The goal is to keep product repositories focused on domain logic while one
+versioned kit owns repeated Wails desktop behavior, cross-platform system
+integration, visual language, and standard GitHub build/release engineering.
+
+## Current scope
+
+The first extraction provides:
+
+- Wails application shell with shared lifecycle wiring.
+- Cross-platform Wails single-instance behavior.
+- Safe hide-to-tray policy.
+- Declarative tray menu actions and checkboxes.
+- Standard show/hide/quit tray behavior.
+- Cross-platform launch-at-login:
+  - Windows HKCU Run.
+  - Linux XDG autostart desktop entry.
+  - macOS LaunchAgent.
+- Shared UI design tokens and components.
+- Shared sidebar/tabs navigation styles.
+- Reusable Windows/Linux/macOS GitHub Actions build workflow with checksums and
+  optional tag release publishing.
+
+The kit deliberately does not own application domain behavior such as FRP
+process management, ADM Gateway/MCP logic, IME repair, or CodexPro workspace
+processes.
+
+## Install during local migration
+
+~~~
+require github.com/wanstu/wails-desktop-kit v0.0.0
+
+replace github.com/wanstu/wails-desktop-kit => ../wails-desktop-kit
+~~~
+
+After the kit has tagged releases, consumers should use a normal version.
+
+## Desktop shell example
+
+~~~go
+package main
+
+import (
+    "embed"
+    "io/fs"
+    "os"
+
+    desktopkit "github.com/wanstu/wails-desktop-kit"
+    "github.com/wanstu/wails-desktop-kit/autostart"
+    kitui "github.com/wanstu/wails-desktop-kit/ui"
+)
+
+//go:embed all:frontend
+var frontend embed.FS
+
+//go:embed assets/appicon.png
+var icon []byte
+
+func main() {
+    launch, err := desktopkit.ParseLaunchOptions(os.Args[1:])
+    if err != nil {
+        panic(err)
+    }
+
+    assets, err := fs.Sub(frontend, "frontend")
+    if err != nil {
+        panic(err)
+    }
+
+    login, err := autostart.New(autostart.Config{
+        ID:          "com.wanstu.example",
+        DisplayName: "Example",
+        Comment:     "Example desktop utility",
+        Arguments:   []string{"--autostart"},
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    window := desktopkit.DefaultWindowConfig()
+    window.Width = 1080
+    window.Height = 720
+
+    err = desktopkit.Run(desktopkit.Config{
+        ID:             "com.wanstu.example",
+        Title:          "Example",
+        Assets:         kitui.Mount(assets),
+        Bind:           []interface{}{NewApp()},
+        Launch:         launch,
+        Window:         window,
+        SingleInstance: true,
+        Tray: desktopkit.TrayConfig{
+            Enabled:   true,
+            Icon:      icon,
+            AutoStart: login,
+            Items: []desktopkit.TrayItem{
+                desktopkit.Action("刷新", func(c *desktopkit.Controller) error {
+                    return nil
+                }),
+            },
+        },
+    })
+    if err != nil {
+        panic(err)
+    }
+}
+~~~
+
+With ui.Mount, application HTML can load shared styles directly:
+
+~~~html
+<link rel="stylesheet" href="/desktopkit/tokens.css">
+<link rel="stylesheet" href="/desktopkit/base.css">
+<link rel="stylesheet" href="/desktopkit/components.css">
+<link rel="stylesheet" href="/desktopkit/navigation.css">
+~~~
+
+## Window safety policy
+
+HideSafe is the default framework policy.
+
+- Windows: hide-on-close is safe.
+- macOS: hide-on-close is safe.
+- Linux: hide-on-close is not enabled automatically yet.
+
+Linux tray availability depends on the desktop session's StatusNotifier host.
+A missing tray host must not make an application window unreachable. Future
+runtime tray-host detection can be implemented once in this kit without
+changing consumer applications.
+
+Applications can explicitly choose HideAlways or HideNever when required.
+
+## Reusable GitHub workflow
+
+A standard Wails app can call:
+
+~~~yaml
+jobs:
+  desktop:
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v1
+    with:
+      app-name: frp-client-manager
+      desktop-dir: cmd/frp-client-desktop
+~~~
+
+For a tag release:
+
+~~~yaml
+permissions:
+  contents: write
+
+jobs:
+  release:
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v1
+    with:
+      app-name: frp-client-manager
+      desktop-dir: cmd/frp-client-desktop
+      publish-release: true
+~~~
+
+The workflow assumes wails.json outputfilename equals app-name. It builds
+Windows amd64, Linux amd64 with webkit2_41, and macOS universal. It stages
+normalized assets and SHA256 files.
+
+Complex products such as ADM (desktop plus multi-platform CLI) and CodexPro+
+(extra core build) should keep product-specific orchestration and reuse
+lower-level kit pieces instead of forcing all behavior through one oversized
+workflow.
+
+## Extraction plan
+
+1. Stabilise the kit itself.
+2. Migrate FRP Client Manager first and require behavior parity.
+3. Migrate AI Dev Manager to validate extension points.
+4. Refine UI components from both migrated products.
+5. Migrate IME Lock v2 and CodexPro+.
+6. Add a cross-platform desktopkit build/icon/package CLI after runtime APIs
+   settle.
+
+See docs/architecture.md and docs/frp-migration.md.
