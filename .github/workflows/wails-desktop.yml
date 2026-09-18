@@ -183,8 +183,6 @@ jobs:
     needs: build
     if: inputs.publish-release && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Download platform artifacts

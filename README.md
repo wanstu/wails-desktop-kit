@@ -159,7 +159,7 @@ A standard Wails app can call:
 ~~~yaml
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.2
     with:
       app-name: frp-client-manager
       desktop-dir: cmd/frp-client-desktop
@@ -173,7 +173,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.1.2
     with:
       app-name: frp-client-manager
       desktop-dir: cmd/frp-client-desktop
