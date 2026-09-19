@@ -43,6 +43,16 @@ on:
         required: false
         default: ""
         type: string
+      linux-deb:
+        description: "Also package the Linux amd64 binary as a Debian .deb artifact."
+        required: false
+        default: false
+        type: boolean
+      linux-deb-description:
+        description: "Description written to the Debian control metadata."
+        required: false
+        default: "Wails desktop application"
+        type: string
       publish-release:
         description: "Publish a GitHub Release after all platform builds"
         required: false
@@ -176,6 +186,42 @@ jobs:
             sha256sum "$target" > "$target.sha256"
           )
 
+          if [[ '${{ inputs.linux-deb }}' == 'true' ]]; then
+            package_name="$(printf '%s' "$APP_NAME" | tr '[:upper:]_' '[:lower:]-')"
+            if [[ ! "$package_name" =~ ^[a-z0-9][a-z0-9+.-]+$ ]]; then
+              echo "Invalid Debian package name derived from app-name: $package_name" >&2
+              exit 1
+            fi
+
+            if [[ -n "$ASSET_VERSION" ]]; then
+              package_version="${ASSET_VERSION#v}"
+            else
+              package_version="0.0.0~ci${GITHUB_RUN_NUMBER}"
+            fi
+
+            deb_root="$(mktemp -d)"
+            trap 'rm -rf "$deb_root"' EXIT
+            install -Dm755 "dist/$target" "$deb_root/usr/bin/$APP_NAME"
+            mkdir -p "$deb_root/DEBIAN"
+            cat > "$deb_root/DEBIAN/control" <<EOF
+Package: $package_name
+Version: $package_version
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: ${GITHUB_REPOSITORY_OWNER}
+Depends: libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0
+Description: ${{ inputs.linux-deb-description }}
+EOF
+
+            deb_target="$asset_base-linux-amd64.deb"
+            dpkg-deb --build --root-owner-group "$deb_root" "dist/$deb_target"
+            (
+              cd dist
+              sha256sum "$deb_target" > "$deb_target.sha256"
+            )
+          fi
+
       - name: Stage macOS release files
         if: runner.os == 'macOS'
         shell: bash
@@ -240,7 +286,15 @@ jobs:
           set -euo pipefail
           cd dist
           asset_base="$APP_NAME-$ASSET_VERSION"
-          for file in "$asset_base-windows-amd64.exe" "$asset_base-linux-amd64" "$asset_base-macos-universal.app.zip"; do
+          files=(
+            "$asset_base-windows-amd64.exe"
+            "$asset_base-linux-amd64"
+            "$asset_base-macos-universal.app.zip"
+          )
+          if [[ '${{ inputs.linux-deb }}' == 'true' ]]; then
+            files+=("$asset_base-linux-amd64.deb")
+          fi
+          for file in "${files[@]}"; do
             test -s "$file"
             test -s "$file.sha256"
             sha256sum --check "$file.sha256"

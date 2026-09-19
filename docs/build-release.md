@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.5.0。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.5.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -68,7 +68,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -94,9 +94,11 @@ jobs:
 | `vet-command` | `go vet ./...` | 同上 |
 | `build-command-windows` | 空 | 非空时使用 Windows 产品 wrapper |
 | `build-command-unix` | 空 | 非空时使用 Linux/macOS 产品 wrapper |
+| `linux-deb` | `false` | Linux amd64 构建后额外生成 Debian `.deb` 安装包 |
+| `linux-deb-description` | `Wails desktop application` | 写入 Debian control 的 Description |
 | `publish-release` | `false` | 是否允许进入 tag Release 发布 |
 
-目前平台矩阵固定，不提供任意矩阵、额外架构、deb 打包或签名输入。需要多 CLI、多产物图或不同平台矩阵的产品继续维护自己的编排，按需复用 Kit 包。
+目前平台矩阵固定，不提供任意矩阵、额外架构或签名输入。`.deb` 仅针对现有 Linux amd64 产物，默认关闭，因此升级 workflow 不会让已有消费者突然增加安装包。
 
 ## 保留产品构建脚本
 
@@ -134,14 +136,14 @@ command 输入就是可执行脚本，只应来自可信仓库配置。不要把
 | artifact 名称 | 普通分支／PR 核心文件 | tag `v1.3` 的 Release 文件 |
 | --- | --- | --- |
 | `<app-name>-windows-amd64` | `<app-name>-windows-amd64.exe` | `<app-name>-v1.3-windows-amd64.exe` |
-| `<app-name>-linux-amd64` | `<app-name>-linux-amd64` | `<app-name>-v1.3-linux-amd64` |
+| `<app-name>-linux-amd64` | `<app-name>-linux-amd64`；开启 `linux-deb` 时另有 `<app-name>-linux-amd64.deb` | `<app-name>-v1.3-linux-amd64`；开启时另有 `<app-name>-v1.3-linux-amd64.deb` |
 | `<app-name>-macos-universal` | `<app-name>-macos-universal.app.zip` | `<app-name>-v1.3-macos-universal.app.zip` |
 
 对应的 `.sha256` 文件使用相同基础文件名，例如 `<app-name>-v1.3-windows-amd64.exe.sha256`，文件内容中的校验目标也会同步带版本号。
 
 发布步骤只下载同一次 run 的这三个指定 artifact，确认带当前 tag 的核心产物存在且非空，再验证 SHA256。构建端仍会上传 `dist/*`，发布端仍会附加下载目录中的文件；不要把临时文件放进 dist，也不要让各平台额外文件使用相同名称。
 
-SHA256 用于完整性校验，不是代码签名。当前工作流没有 macOS 签名／公证，也没有 Windows 签名或 Linux 安装包抽象。
+SHA256 用于完整性校验，不是代码签名。开启 `linux-deb` 时 `.deb` 也会生成独立 `.sha256`；包内将应用安装到 `/usr/bin/<app-name>`，并声明 GTK3 与 WebKitGTK 4.1 运行时依赖。当前工作流仍没有 macOS 签名／公证或 Windows 签名。
 
 ## 常见问题
 

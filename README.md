@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.5.0
+## 安装 v0.5.1
 
-本文对应 **v0.5.0**。在 v0.4.x 配置与 Secure Config 基础上，新增 Runtime Theme：Kit 固定内置 4 个离线 fallback Theme Pack，并可从独立 Theme 仓库运行时同步完整主题集、校验 SHA-256、保存 last-known-good 完整快照。Theme 更新不再要求消费者重新构建应用。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.5.1**。在 v0.5.0 Runtime Theme 基础上，reusable workflow 新增可选 Debian `.deb` 打包能力；默认关闭，不影响已有消费者。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.5.0
+go get github.com/wanstu/wails-desktop-kit@v0.5.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.5.1` | reusable workflow 新增可选 Linux `.deb` 产物与 SHA256 校验；默认关闭 |
 | `v0.5.0` | Runtime Theme：4 个内置 fallback、远程 manifest、完整快照缓存、SHA-256 校验；Theme 更新无需重建消费者 |
 | `v0.4.0` | 统一 `~/.config/<app-id>` 配置目录；新增 Secure Config，系统凭据库托管主密钥 + AES-256-GCM 密文 |
 | `v0.3.1` | 新增确定性 Kit 家族图标生成器：Terminal / Monogram；保留原 normalize CLI |
@@ -67,7 +68,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`，默认 `~/.config/<app>` | 稳定 App ID |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON | Secret 的逻辑 key 与业务生命周期 |
-| reusable workflow | 三平台并行构建、产物归档、SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
+| reusable workflow | 三平台并行构建、产物归档、SHA256、可选 Linux `.deb`、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
 
