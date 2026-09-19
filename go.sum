@@ -67,8 +67,8 @@ github.com/wailsapp/mimetype v1.4.1 h1:pQN9ycO7uo4vsUUuPeHEYoUkLVkaRntMnHJxVwYhw
 github.com/wailsapp/mimetype v1.4.1/go.mod h1:9aV5k31bBOv5z6u+QP8TltzvNGJPmNJD4XlAL3U+j3o=
 github.com/wailsapp/wails/v2 v2.15.0 h1:u7cHK+UesZOlYxyJxfYLteaCPhws6UsZoDdqUejuX6Q=
 github.com/wailsapp/wails/v2 v2.15.0/go.mod h1:scxrgwfsv6yR6fE6cCF+Flfl+JeU+SR87T9x4kILJ6M=
-github.com/wanstu/systray v0.3.0-wanstu.1 h1:pB1I0K7roJ+rTEUdDXTfK4+vDxGWhcbZonC17+QVEe4=
-github.com/wanstu/systray v0.3.0-wanstu.1/go.mod h1:aoA1tAjYSKH/iVc761t7IVDOaTRYmOwglbcbpcLF1v0=
+github.com/wanstu/systray v0.3.0-wanstu.2 h1:iIpvugPiu61MIYewSQu9ZTbgqgMgPYFTWFrKaBCLVlQ=
+github.com/wanstu/systray v0.3.0-wanstu.2/go.mod h1:Dk1BLe+KzAcHGAFZfjRkpQEEnwdmjHwATyBOEA+or6g=
 github.com/zalando/go-keyring v0.2.8 h1:6sD/Ucpl7jNq10rM2pgqTs0sZ9V3qMrqfIIy5YPccHs=
 github.com/zalando/go-keyring v0.2.8/go.mod h1:tsMo+VpRq5NGyKfxoBVjCuMrG47yj8cmakZDO5QGii0=
 golang.org/x/crypto v0.53.0 h1:QZ4Muo8THX6CizN2vPPd5fBGHyogrdK9fG4wLPFUsto=

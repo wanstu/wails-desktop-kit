@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogpu/systray"
+	"github.com/wanstu/systray"
 )
 
 const traySupported = true
