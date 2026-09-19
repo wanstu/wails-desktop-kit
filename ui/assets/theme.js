@@ -3,6 +3,7 @@
 
   const QUERY = "(prefers-color-scheme: dark)";
   const VALID = new Set(["light", "dark", "system"]);
+  const PACK_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
   let mode = "light";
   let media = null;
 
@@ -67,6 +68,22 @@
     return value === "dark" ? "dark" : "light";
   }
 
+  function setPack(name) {
+    if (typeof name !== "string" || !PACK_PATTERN.test(name)) {
+      throw new TypeError("desktopKitTheme.setPack: expected lowercase pack name using letters, numbers, - or _");
+    }
+    document.documentElement.setAttribute("data-dk-theme-pack", name);
+    return name;
+  }
+
+  function getPack() {
+    return document.documentElement.getAttribute("data-dk-theme-pack") || "";
+  }
+
+  function clearPack() {
+    document.documentElement.removeAttribute("data-dk-theme-pack");
+  }
+
   function dispose() {
     detachSystemListener();
   }
@@ -75,6 +92,9 @@
     apply,
     getMode,
     getResolvedTheme,
+    setPack,
+    getPack,
+    clearPack,
     dispose
   });
 })(window);
