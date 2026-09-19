@@ -8,7 +8,7 @@
 
 第一阶段公共抽象已经可用，FRP 已实际复用 Runtime／tray／autostart／CI。Review 后的关键修复已提交推送，Kit 和 FRP 的三平台 CI 全绿。
 
-当前发布目标为 **Kit v0.2.2**。v0.2.1 已完成 tag Release 产物命名修复；v0.2.2 在保持 Runtime API 不变的前提下补齐 UI 暗色主题 token 契约。消费者应同时固定 Go Module 与 reusable workflow 版本。
+当前发布目标为 **Kit v0.3.0**。v0.2.2 已补齐 UI 暗色主题 token 契约；v0.3.0 在保持 Runtime API 与既有主题模式兼容的前提下增加独立 Theme Pack 协议，并把可选通用主题包的实现边界拆到 `wails-desktop-kit-theme`。消费者应同时固定 Go Module 与 reusable workflow 版本。
 
 ## 已完成的工作
 
