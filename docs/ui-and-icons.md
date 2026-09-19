@@ -107,11 +107,25 @@ API：
 - `desktopKitTheme.apply("system")`：监听 `prefers-color-scheme`，系统变化时更新公共主题。
 - `desktopKitTheme.getMode()`：返回应用最后显式选择的模式。
 - `desktopKitTheme.getResolvedTheme()`：返回当前实际生效的 `light` 或 `dark`。
+- `desktopKitTheme.setPack("midnight")`：设置可选主题包标识，只写入 `data-dk-theme-pack`，不负责加载 CSS。
+- `desktopKitTheme.getPack()`：返回当前主题包名称；未设置时返回空字符串。
+- `desktopKitTheme.clearPack()`：移除当前主题包标识。
 - `desktopKitTheme.dispose()`：移除 system 监听，适合测试或特殊生命周期。
 
 Kit 启动时不会主动读取 `localStorage`、配置文件或系统偏好，因此旧应用升级不会突然改变外观。应用负责保存自己的 `theme = light | dark | system`，并在启动时调用 `apply`。
 
-公共组件颜色全部通过 `--dk-*` token 获取。产品可以在 `app.css` 中针对自己的品牌主题覆盖 token，例如 Midnight、Graphite、FRP Blue，而不需要复制 Kit 组件 CSS。Kit 不提供 `KitThemeSSH`、`KitThemeFRP` 之类产品枚举。
+公共组件颜色全部通过 `--dk-*` token 获取。主题模式和主题包是正交概念：`data-dk-theme` 只表示 light / dark 的实际明暗结果，`data-dk-theme-pack` 只表示可选视觉配色。推荐组合用法：
+
+~~~html
+<html data-dk-theme="dark" data-dk-theme-pack="midnight">
+~~~
+
+~~~js
+desktopKitTheme.apply("system");
+desktopKitTheme.setPack("midnight");
+~~~
+
+Kit 只维护主题协议和默认 light/dark token，不内置 Midnight、Graphite、Forest 等可选主题包。官方可选通用主题应放在独立模块 `github.com/wanstu/wails-desktop-kit-themes`；产品品牌主题仍由具体应用维护。主题包 CSS 必须只覆盖 `--dk-*` token，不重新定义 `.dk-button`、`.dk-panel`、`.dk-nav-link` 等组件规则。
 
 自定义主题至少应覆盖背景、文字、边框、primary、状态色、导航 active、control、backdrop 与 log token，并逐页检查 hover、focus、disabled 和窄窗口布局。
 

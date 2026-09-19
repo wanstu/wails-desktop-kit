@@ -40,6 +40,10 @@ func TestThemeScriptSupportsExplicitModesWithoutPersistence(t *testing.T) {
 		`matchMedia`,
 		`prefers-color-scheme: dark`,
 		`data-dk-theme`,
+		`data-dk-theme-pack`,
+		`setPack`,
+		`getPack`,
+		`clearPack`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Fatalf("theme.js missing %q", want)
@@ -47,6 +51,9 @@ func TestThemeScriptSupportsExplicitModesWithoutPersistence(t *testing.T) {
 	}
 	if strings.Contains(js, "localStorage") || strings.Contains(js, "sessionStorage") {
 		t.Fatal("theme.js must not own application theme persistence")
+	}
+	if strings.Contains(js, "midnight") || strings.Contains(js, "graphite") || strings.Contains(js, "forest") {
+		t.Fatal("theme.js must define the pack protocol, not product or optional pack names")
 	}
 }
 
