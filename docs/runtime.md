@@ -19,7 +19,7 @@
 | `SingleInstance` | 默认 false，需要显式开启 |
 | `SecondInstance` | 第二次启动回调；只在启用单实例时生效 |
 
-优先从 `DefaultWindowConfig()` 修改配置：默认尺寸 1024×720，最小 720×520，`HideSafe`，自启动时允许延后隐藏。
+优先从 `DefaultWindowConfig()` 修改配置：默认尺寸 1024×720，最小 720×520，`HideAlways`，自启动时允许延后隐藏。Linux 启用托盘时默认关闭到托盘。
 
 直接传 `WindowConfig{}` 会补齐尺寸和隐藏策略，但布尔字段 `StartHiddenOnAutoStart` 仍为 false；它与 `DefaultWindowConfig()` 不完全等价。
 
@@ -51,7 +51,7 @@
 
 ## 托盘菜单
 
-配置顺序为：标准显示／隐藏、`Items`、`AutoStart`、`FooterItems`、标准退出。Kit 按配置添加组间分隔线；组内可使用 `Separator()`。
+配置顺序为：标准显示／隐藏、`Items`、`AutoStart`、`FooterItems`、标准退出。Kit 按配置添加组间分隔线；组内可使用 `Separator()`。Linux StatusNotifierItem 默认将左键主激活映射为 `ShowWindow()`，右键保留给 dbusmenu 托盘菜单。
 
 - `Enabled: true` 时必须提供有效 PNG `Icon`。
 - `DisableShowHide` 移除默认显示／隐藏项。

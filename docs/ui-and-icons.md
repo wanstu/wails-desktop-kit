@@ -140,7 +140,7 @@ Kit 除默认 light/dark token 外，还固定内置 `aurora`、`ocean`、`fores
 v0.3.1 起，`desktopkit icon` 同时提供 **generate**（确定性生成产品家族图标）和 **normalize**（规范化已有图片）两条路径。原有 `desktopkit icon --input ...` 用法保持兼容。
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.4.0
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.7.0
 
 # SSH / Terminal 家族图标
 desktopkit icon generate --output assets/appicon.png --symbol terminal --background "#2463EB"
@@ -159,15 +159,15 @@ desktopkit icon --input assets/icons/source.png --output build/appicon.png --can
 | 参数 | 默认值 | 说明 |
 | --- | --- | --- |
 | `--output` | 必填 | PNG 输出路径 |
-| `--size` | 32 | 16–1024 的正方形尺寸 |
-| `--inset` | 2 | 透明外边距 |
-| `--radius` | 7 | 圆角半径 |
+| `--size` | 256 | 16–1024 的正方形尺寸 |
+| `--inset` | 16 | 透明外边距 |
+| `--radius` | 56 | 圆角半径 |
 | `--symbol` | terminal | `terminal` 或 `monogram` |
 | `--text` | 空 | monogram 使用；一个 ASCII 字母或数字 |
 | `--background` | #2463EB | `#RRGGBB` 或 `#RRGGBBAA` |
 | `--foreground` | #FFFFFF | 前景色 |
 
-默认生成规格与 FRP Client 的现有产品家族保持一致：透明 32×32 画布、纯色圆角底、白色几何 glyph。生成过程不调用系统字体，因此 Windows/Linux/macOS 输出一致。
+默认生成规格使用透明 256×256 画布、纯色圆角底、白色几何 glyph；视觉比例与原 32×32 家族图标一致。需要小尺寸资源时可显式传 `--size 32`。生成过程不调用系统字体，因此 Windows/Linux/macOS 输出一致。
 
 对应 Go API 使用 `icon.DefaultBadgeOptions()` 与 `icon.GenerateBadgeFile(...)`。
 

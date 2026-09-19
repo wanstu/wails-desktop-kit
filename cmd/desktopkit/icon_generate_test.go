@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -22,6 +23,18 @@ func TestRunIconGenerate(t *testing.T) {
 	}
 	if info.Size() == 0 {
 		t.Fatal("generated icon is empty")
+	}
+	file, err := os.Open(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	img, err := png.Decode(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if img.Bounds().Dx() != 256 || img.Bounds().Dy() != 256 {
+		t.Fatalf("default generated icon bounds = %v, want 256x256", img.Bounds())
 	}
 }
 

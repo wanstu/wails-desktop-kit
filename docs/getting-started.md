@@ -184,7 +184,7 @@ open ./build/bin/desktop-demo.app
 1. 保留现有 Wails 配置、业务对象和前端构建脚本，固定 Kit 依赖版本。
 2. 用 `Config.Bind` 传入原有业务对象，把原有 Startup／DomReady／Shutdown 交给 `Hooks`。
 3. 把托盘业务操作转换为 `Action`／`Checkbox`，特殊退出动作放入 `FooterItems` 并设置 `DisableQuit`。
-4. 明确单实例、自启动参数和关闭行为。默认使用 `HideSafe`；需要自定义第二次启动行为时使用 `SecondInstance`。
+4. 明确单实例、自启动参数和关闭行为。v0.7.0 默认使用 `HideAlways`，启用托盘后关闭窗口会保留后台进程；需要点击 × 直接退出时显式改用 `HideSafe` 或 `HideNever`。需要自定义第二次启动行为时使用 `SecondInstance`。
 5. 删除已被 Kit 接管的原生托盘循环、重复自启动实现和旧单实例 IPC，避免两套逻辑同时运行。
 6. 用 reusable workflow 替换平台矩阵；保留产品 wrapper 中的业务检查。
 7. 最后再迁移 CSS 和图标脚本，分别检查页面和打包结果。
