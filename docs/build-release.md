@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.7.2。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.8.0。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -30,7 +30,7 @@ v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程�
 Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.7.2
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.8.0
 
 desktopkit package linux `
   --input .\build\bin\desktop-demo `
@@ -45,7 +45,7 @@ desktopkit package linux `
   --icon .\build\appicon.png
 ~~~
 
-`.deb` 可把程序安装到 `/usr/bin/<app-name>`，并在提供资源时同时安装 `.desktop` 与 hicolor 图标。`.tar.gz` 则生成独立版本目录，包含二进制和可选桌面资源。
+`.deb` 可把程序安装到 `/usr/bin/<app-name>`，并在提供资源时同时安装 `.desktop` 与 hicolor 图标。`--extra-bin name=path` 可重复提供，把 CLI/helper 一并安装到 `/usr/bin`；`.tar.gz` 同样包含这些额外程序。`raw` 格式仍只代表主程序。
 
 Packaging API 以 format builder 为边界。以后增加 AppImage 等格式时可以新增 builder，而不需要改变产品的 Wails 构建逻辑。
 
@@ -68,13 +68,13 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.2
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.0
     with:
       app-name: desktop-demo
       desktop-dir: .
 ~~~
 
-默认并行构建 Windows amd64、Linux amd64、macOS universal。单个平台失败不会立即取消其他平台；整个构建必须成功后才可能进入 Release。
+默认并行构建 Windows amd64、Linux amd64、macOS universal。v0.8.0 起可通过 `build-windows`、`build-linux`、`build-macos` 关闭不支持的平台；matrix 只创建实际启用的平台 job。单个平台失败不会立即取消其他平台；所有启用平台必须成功后才可能进入 Release。
 
 如果应用位于子目录，将 `desktop-dir` 改为相对仓库根目录的路径，例如 `cmd/frp-client-desktop`。该目录用于直接 Wails 构建和产物定位；默认 Test／Vet 和产品 wrapper 均从仓库根目录执行。
 
@@ -94,7 +94,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.2
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.0
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -120,11 +120,13 @@ jobs:
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.7.2` | Packaging helper 版本 |
+| `desktopkit-cli-version` | `v0.8.0` | Packaging helper 版本 |
+| `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
 | `build-command-windows` | 空 | Windows 产品 wrapper |
-| `build-command-unix` | 空 | Linux/macOS 产品 wrapper |
+| `build-command-linux` / `build-command-macos` | 空 | 平台专属 wrapper，优先于旧 `build-command-unix` |
+| `build-command-unix` | 空 | 兼容旧 caller 的 Linux/macOS 共用 wrapper |
 | `linux-package-formats` | `raw` | 逗号分隔：`raw,deb,tar.gz` |
 | `linux-package-name` | 空 | Debian 包名；空时由 app-name 推导 |
 | `linux-package-description` | `Wails desktop application` | Linux 包描述 |
@@ -134,6 +136,7 @@ jobs:
 | `linux-deb-priority` | `optional` | Debian Priority |
 | `linux-desktop-file` | 空 | 可选 `.desktop` 文件 |
 | `linux-icon-file` | 空 | 可选图标文件 |
+| `linux-extra-bins` | 空 | 换行分隔的 `name=path`；把 CLI/helper 一并安装进 deb/tar.gz |
 | `post-package-command-windows` | 空 | 向 `dist/` 增加额外 Windows 产物 |
 | `post-package-command-linux` | 空 | 向 `dist/` 增加额外 Linux 产物，例如 AppImage |
 | `post-package-command-macos` | 空 | 向 `dist/` 增加额外 macOS 产物 |
@@ -141,7 +144,7 @@ jobs:
 | `linux-deb-description` | 空 | 兼容旧 caller；非空时覆盖新 Description |
 | `publish-release` | `false` | 是否允许进入 tag Release 发布 |
 
-`linux-deb` 与 `linux-deb-description` 进入兼容模式，新项目优先使用 `linux-package-formats` 与 `linux-package-description`。v0.5.2 已热修旧 `.deb` control 换行；升级到 v0.6.0 时，已经使用 `linux-deb: true` 的消费者不需要改 caller 参数，workflow 会自动转换为 `raw,deb`。平台矩阵当前仍固定为 Windows amd64、Linux amd64、macOS universal。
+`linux-deb` 与 `linux-deb-description` 进入兼容模式，新项目优先使用 `linux-package-formats` 与 `linux-package-description`。v0.5.2 已热修旧 `.deb` control 换行；已有 caller 继续兼容。v0.8.0 起平台集合由三个 `build-*` 输入决定，Windows-only 或 Linux-only 产品不再需要复制整套 workflow。
 
 ### 更复杂格式的扩展点
 
@@ -205,6 +208,22 @@ desktop-demo-v1.3.0-linux-amd64.tar.gz
 以及每个文件对应的 `.sha256`。post-package hook 新增到 `dist/` 的文件同样会自动生成 checksum 并进入 GitHub Release。
 
 Release job 不再写死 package 格式，而是验证下载到的全部 `.sha256`，并拒绝空文件。SHA256 用于完整性校验，不是代码签名。当前仍未内置 Windows Authenticode、macOS Developer ID/notarization、AppImage、DMG 或 MSI；这些可以先通过 post-package hook 使用，后续再逐步升为 Kit 内置 builder。
+
+## 消费者版本治理
+
+v0.8.0 的 CLI 可以直接检查 Go Module、reusable workflow、Wails module 和 `wails.json` 的版本/命名漂移：
+
+~~~powershell
+desktopkit doctor --root .
+~~~
+
+发现 Kit module 与 workflow 版本不一致时返回非零退出码，适合本地升级前或 CI 检查。升级时可同时修改 `go.mod` 和所有 reusable workflow 引用：
+
+~~~powershell
+desktopkit upgrade --root . --to v0.8.0
+~~~
+
+默认随后执行 `go mod tidy`；只做文本升级可加 `--tidy=false`。升级命令不会改业务源码，也不会自动改变 Runtime policy。
 
 ## 常见问题
 

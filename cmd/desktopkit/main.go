@@ -15,12 +15,18 @@ Usage:
   desktopkit icon [normalize options]
   desktopkit icon normalize [options]
   desktopkit icon generate [options]
+  desktopkit icon prepare-wails [options]
   desktopkit package linux [options]
+  desktopkit doctor [options]
+  desktopkit upgrade [options]
 
 Commands:
   icon normalize    Normalize a PNG/JPEG/GIF onto a square transparent PNG canvas.
   icon generate     Generate a deterministic Kit family icon without system fonts.
+  icon prepare-wails Prepare build/appicon.png and invalidate generated Windows ICO.
   package linux     Stage Linux release artifacts (raw, deb, tar.gz) and SHA256 files.
+  doctor            Inspect Kit/Wails/workflow version drift in a consumer repository.
+  upgrade           Update Kit module/workflow references in a consumer repository.
 
 Existing "desktopkit icon --input ... --output ..." remains compatible.
 `
@@ -45,6 +51,10 @@ func run(args []string) error {
 		return runIcon(args[1:])
 	case "package":
 		return runPackage(args[1:])
+	case "doctor":
+		return runDoctor(args[1:])
+	case "upgrade":
+		return runUpgrade(args[1:])
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -57,6 +67,8 @@ func runIcon(args []string) error {
 			return runIconGenerate(args[1:])
 		case "normalize":
 			return runIconNormalize(args[1:])
+		case "prepare-wails":
+			return runIconPrepareWails(args[1:])
 		case "help", "-h", "--help":
 			fmt.Print(usage)
 			return nil
@@ -172,6 +184,7 @@ func runPackageLinux(args []string) error {
 
 	var request kitpackaging.LinuxRequest
 	var formats string
+	var extraBins stringValues
 
 	flags.StringVar(&request.Input, "input", "", "built Linux executable path")
 	flags.StringVar(&request.OutputDir, "dist", "dist", "output directory")
@@ -187,6 +200,7 @@ func runPackageLinux(args []string) error {
 	flags.StringVar(&request.Depends, "depends", "", "Debian Depends value")
 	flags.StringVar(&request.DesktopFile, "desktop-file", "", "optional .desktop file included in deb/tar.gz")
 	flags.StringVar(&request.IconFile, "icon", "", "optional app icon included in deb/tar.gz")
+	flags.Var(&extraBins, "extra-bin", "additional installed executable as name=path; may be repeated")
 	flags.StringVar(&formats, "formats", "raw", "comma-separated formats: raw,deb,tar.gz")
 
 	if err := flags.Parse(args); err != nil {
@@ -210,6 +224,10 @@ func runPackageLinux(args []string) error {
 		return err
 	}
 	request.Formats = parsed
+	request.ExtraBinaries, err = parseExtraBinaries(extraBins)
+	if err != nil {
+		return err
+	}
 
 	artifacts, err := kitpackaging.PackageLinux(request)
 	if err != nil {

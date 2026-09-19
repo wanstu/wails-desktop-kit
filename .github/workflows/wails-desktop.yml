@@ -28,8 +28,23 @@ on:
       desktopkit-cli-version:
         description: "Desktop Kit helper version used for package staging."
         required: false
-        default: "v0.7.2"
+        default: "v0.8.0"
         type: string
+      build-windows:
+        description: "Build the Windows amd64 desktop artifact."
+        required: false
+        default: true
+        type: boolean
+      build-linux:
+        description: "Build the Linux amd64 desktop artifact."
+        required: false
+        default: true
+        type: boolean
+      build-macos:
+        description: "Build the macOS universal desktop artifact."
+        required: false
+        default: true
+        type: boolean
       test-command:
         required: false
         default: "go test ./..."
@@ -44,7 +59,17 @@ on:
         default: ""
         type: string
       build-command-unix:
-        description: "Optional repository-root Linux/macOS build wrapper. Empty uses direct wails build."
+        description: "Legacy repository-root Linux/macOS build wrapper. Platform-specific commands take precedence."
+        required: false
+        default: ""
+        type: string
+      build-command-linux:
+        description: "Optional repository-root Linux build wrapper."
+        required: false
+        default: ""
+        type: string
+      build-command-macos:
+        description: "Optional repository-root macOS build wrapper."
         required: false
         default: ""
         type: string
@@ -106,6 +131,11 @@ on:
         required: false
         default: ""
         type: string
+      linux-extra-bins:
+        description: "Optional newline-separated name=path entries installed alongside the main Linux executable."
+        required: false
+        default: ""
+        type: string
       linux-deb:
         description: "Deprecated compatibility flag. true adds deb to linux-package-formats."
         required: false
@@ -123,23 +153,44 @@ on:
         type: boolean
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Build platform matrix
+        id: matrix
+        shell: bash
+        env:
+          BUILD_WINDOWS: ${{ inputs.build-windows }}
+          BUILD_LINUX: ${{ inputs.build-linux }}
+          BUILD_MACOS: ${{ inputs.build-macos }}
+        run: |
+          set -euo pipefail
+          items='[]'
+          if [[ "$BUILD_WINDOWS" == "true" ]]; then
+            items="$(jq -c '. + [{"name":"Windows amd64","os":"windows-latest","artifact":"windows-amd64"}]' <<<"$items")"
+          fi
+          if [[ "$BUILD_LINUX" == "true" ]]; then
+            items="$(jq -c '. + [{"name":"Linux amd64","os":"ubuntu-24.04","artifact":"linux-amd64"}]' <<<"$items")"
+          fi
+          if [[ "$BUILD_MACOS" == "true" ]]; then
+            items="$(jq -c '. + [{"name":"macOS universal","os":"macos-latest","artifact":"macos-universal"}]' <<<"$items")"
+          fi
+          if [[ "$items" == "[]" ]]; then
+            echo "At least one build platform must be enabled" >&2
+            exit 1
+          fi
+          echo "matrix={\"include\":$items}" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: plan
     permissions:
       contents: read
     name: ${{ matrix.name }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - name: Windows amd64
-            os: windows-latest
-            artifact: windows-amd64
-          - name: Linux amd64
-            os: ubuntu-24.04
-            artifact: linux-amd64
-          - name: macOS universal
-            os: macos-latest
-            artifact: macos-universal
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -194,20 +245,35 @@ jobs:
           Set-Location '${{ inputs.desktop-dir }}'
           wails build -clean
 
-      - name: Build Unix with product wrapper
-        if: runner.os != 'Windows' && inputs.build-command-unix != ''
+      - name: Build Linux with product wrapper
+        if: runner.os == 'Linux' && inputs.build-command-linux != ''
+        shell: bash
+        run: ${{ inputs.build-command-linux }}
+
+      - name: Build Linux with legacy Unix wrapper
+        if: runner.os == 'Linux' && inputs.build-command-linux == '' && inputs.build-command-unix != ''
         shell: bash
         run: ${{ inputs.build-command-unix }}
 
       - name: Build Linux
-        if: runner.os == 'Linux' && inputs.build-command-unix == ''
+        if: runner.os == 'Linux' && inputs.build-command-linux == '' && inputs.build-command-unix == ''
         shell: bash
         run: |
           cd '${{ inputs.desktop-dir }}'
           wails build -clean -tags webkit2_41
 
+      - name: Build macOS with product wrapper
+        if: runner.os == 'macOS' && inputs.build-command-macos != ''
+        shell: bash
+        run: ${{ inputs.build-command-macos }}
+
+      - name: Build macOS with legacy Unix wrapper
+        if: runner.os == 'macOS' && inputs.build-command-macos == '' && inputs.build-command-unix != ''
+        shell: bash
+        run: ${{ inputs.build-command-unix }}
+
       - name: Build macOS universal
-        if: runner.os == 'macOS' && inputs.build-command-unix == ''
+        if: runner.os == 'macOS' && inputs.build-command-macos == '' && inputs.build-command-unix == ''
         shell: bash
         run: |
           cd '${{ inputs.desktop-dir }}'
@@ -246,6 +312,7 @@ jobs:
           DEB_PRIORITY: ${{ inputs.linux-deb-priority }}
           DESKTOP_FILE: ${{ inputs.linux-desktop-file }}
           ICON_FILE: ${{ inputs.linux-icon-file }}
+          EXTRA_BINS: ${{ inputs.linux-extra-bins }}
         run: |
           set -euo pipefail
           asset_base="$APP_NAME"
@@ -284,6 +351,12 @@ jobs:
           if [[ -n "$ICON_FILE" ]]; then
             args+=(--icon "$ICON_FILE")
           fi
+          while IFS= read -r extra; do
+            extra="${extra#"${extra%%[![:space:]]*}"}"
+            extra="${extra%"${extra##*[![:space:]]}"}"
+            [[ -n "$extra" ]] || continue
+            args+=(--extra-bin "$extra")
+          done <<< "$EXTRA_BINS"
           desktopkit "${args[@]}"
 
       - name: Stage macOS release files
@@ -369,18 +442,21 @@ jobs:
 
     steps:
       - name: Download windows-amd64 artifact
+        if: inputs.build-windows
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.app-name }}-windows-amd64
           path: dist
 
       - name: Download linux-amd64 artifact
+        if: inputs.build-linux
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.app-name }}-linux-amd64
           path: dist
 
       - name: Download macos-universal artifact
+        if: inputs.build-macos
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.app-name }}-macos-universal
@@ -410,8 +486,8 @@ jobs:
             [[ -s "$file" ]] || { echo "Empty release file: $file" >&2; exit 1; }
             release_files=$((release_files + 1))
           done
-          if (( release_files < 3 )); then
-            echo "Expected at least one release file from each platform, got $release_files" >&2
+          if (( release_files < 1 )); then
+            echo "No release files found" >&2
             exit 1
           fi
 

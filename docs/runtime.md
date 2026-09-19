@@ -17,13 +17,15 @@
 | `Tray` | 图标、默认菜单、业务菜单、自启动 provider |
 | `Hooks` | 生命周期及托盘错误处理 |
 | `SingleInstance` | 默认 false，需要显式开启 |
-| `SecondInstance` | 第二次启动回调；只在启用单实例时生效 |
+| `SecondInstancePolicy` | 未自定义回调时的重复启动策略：默认唤醒、仅手工启动唤醒、全部忽略 |
+| `SecondInstanceAutoStartAliases` | `SecondInstanceWakeManual` 额外识别的自启动参数别名 |
+| `SecondInstance` | 高级自定义第二次启动回调；设置后覆盖内置 policy |
 
 优先从 `DefaultWindowConfig()` 修改配置：默认尺寸 1024×720，最小 720×520，`HideAlways`，自启动时允许延后隐藏。Linux 启用托盘时默认关闭到托盘。
 
 直接传 `WindowConfig{}` 会补齐尺寸和隐藏策略，但布尔字段 `StartHiddenOnAutoStart` 仍为 false；它与 `DefaultWindowConfig()` 不完全等价。
 
-`ParseLaunchOptions(os.Args[1:])` 只处理标准自启动参数，未知选项／额外位置参数会报错。带 CLI 子命令或文件参数的产品应自行解析，再构造 `LaunchOptions{AutoStart: ...}`。
+`ParseLaunchOptions(os.Args[1:])` 处理标准 `--autostart`。兼容历史参数可用 `ParseLaunchOptionsWithAliases(args, "--minimized")`；`HasAutoStartArg` 可在自定义重复启动逻辑中复用同一判断。带 CLI 子命令或文件参数的产品仍应先自行分流，再构造 `LaunchOptions`。
 
 ## 隐藏、恢复和退出
 
@@ -46,6 +48,9 @@
 | `HideWindow()` | 在当前策略允许且托盘就绪时隐藏 |
 | `Quit()` | 标记主动退出，使这次操作绕过关闭到托盘；仍可被 BeforeClose 取消 |
 | `ShowError(title, err)` | 恢复窗口并显示错误对话框；nil error 不处理 |
+| `OpenURL(url)` | 使用当前 Wails runtime 打开系统浏览器 |
+| `Emit(event, data...)` | 发送 Wails event；runtime 未就绪时返回错误 |
+| `OpenFileDialog(options)` / `MessageDialog(options)` | 复用 Controller 持有的 runtime context |
 
 需要退出时优先使用 Kit 回调提供的 `Controller.Quit()`。直接调用 Wails 的 Quit 不会设置 Kit 的主动退出标记，在允许隐藏的情况下可能被解释为关闭到托盘。
 
@@ -93,7 +98,8 @@ func exitTray(icon []byte, stopAll func() error) desktopkit.TrayConfig {
 
 | Hook | 顺序／语义 |
 | --- | --- |
-| `Startup(ctx)` | Kit 先保存 context，再执行业务启动 |
+| `Ready(controller)` | Kit 保存 runtime context 后立即提供稳定 Controller，适合业务保存引用而不是自己维护 `mutex + context.Context` |
+| `Startup(ctx)` | Ready 之后执行业务启动；保留给只需要 context 的旧用法 |
 | `DomReady(ctx)` | 先执行业务回调，再启动托盘；此时不能假定托盘已就绪 |
 | `BeforeClose(ctx) bool` | 先于隐藏／退出决策；true 取消本次操作，false 继续；主动退出同样会调用它 |
 | `Shutdown(ctx)` | Kit 先停止接收托盘任务、请求原生清理并停用 Controller，再执行业务关闭 |
@@ -103,19 +109,26 @@ func exitTray(icon []byte, stopAll func() error) desktopkit.TrayConfig {
 
 ## 第二次启动
 
-默认行为是显示并取消最小化。下面示例只适用于首个进程也使用标准自启动参数的应用，用于忽略重复登录启动，同时允许手动启动唤醒窗口：
+默认仍保持历史行为：第二次启动显示并取消最小化。托盘应用通常可以直接声明“登录自启动重复调用静默忽略，手工启动才唤醒”：
 
 ~~~go
-func onSecondInstance(c *desktopkit.Controller, data options.SecondInstanceData) {
-	launch, err := desktopkit.ParseLaunchOptions(data.Args)
-	if err == nil && launch.AutoStart {
-		return
-	}
-	c.ShowWindow()
+desktopkit.Config{
+	SingleInstance:       true,
+	SecondInstancePolicy: desktopkit.SecondInstanceWakeManual,
 }
 ~~~
 
-需导入 `github.com/wailsapp/wails/v2/pkg/options`，并在 Config 设置 `SecondInstance: onSecondInstance`。回调同时提供 `WorkingDirectory`。Wails v2.15.0 实际将它设为可执行文件所在目录，不应直接当作启动者当前工作目录。处理文件／URL 的产品应使用自己的参数解析器，而不是上面的简化策略。
+历史登录参数如果还包含 `--minimized`：
+
+~~~go
+desktopkit.Config{
+	SingleInstance:                  true,
+	SecondInstancePolicy:            desktopkit.SecondInstanceWakeManual,
+	SecondInstanceAutoStartAliases: []string{"--minimized"},
+}
+~~~
+
+完全忽略重复启动可使用 `SecondInstanceIgnore`。只有需要处理文件、URL 等业务参数时才实现 `SecondInstance` 自定义回调；一旦设置自定义回调，内置 policy 不再参与。Wails v2.15.0 的 `WorkingDirectory` 不应直接当作启动者当前工作目录。
 
 ## 登录自启
 

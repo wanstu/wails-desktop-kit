@@ -45,6 +45,10 @@ func TestPackageLinuxProducesRawTarAndDeb(t *testing.T) {
 	if err := os.WriteFile(icon, []byte("fake-png-for-packaging-test"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	helper := filepath.Join(root, "demo-helper")
+	if err := os.WriteFile(helper, []byte("#!/bin/sh\necho helper\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 
 	dist := filepath.Join(root, "dist")
 	artifacts, err := PackageLinux(LinuxRequest{
@@ -60,6 +64,7 @@ func TestPackageLinuxProducesRawTarAndDeb(t *testing.T) {
 		Depends:        "libgtk-3-0",
 		DesktopFile:    desktop,
 		IconFile:       icon,
+		ExtraBinaries:  []LinuxBinary{{Source: helper, InstallName: "demo-helper"}},
 		Formats:        []Format{FormatRaw, FormatTarGz, FormatDeb},
 	})
 	if err != nil {
@@ -87,6 +92,7 @@ func TestPackageLinuxProducesRawTarAndDeb(t *testing.T) {
 	tarEntries := readTarGzFile(t, filepath.Join(dist, "demo-v1.2.3-linux-amd64.tar.gz"))
 	for _, name := range []string{
 		"demo-v1.2.3-linux-amd64/demo",
+		"demo-v1.2.3-linux-amd64/demo-helper",
 		"demo-v1.2.3-linux-amd64/demo.desktop",
 		"demo-v1.2.3-linux-amd64/demo.png",
 	} {
@@ -122,6 +128,7 @@ func TestPackageLinuxProducesRawTarAndDeb(t *testing.T) {
 	data := readTarGzBytes(t, debEntries["data.tar.gz"])
 	for _, name := range []string{
 		"./usr/bin/demo",
+		"./usr/bin/demo-helper",
 		"./usr/share/applications/demo.desktop",
 		"./usr/share/icons/hicolor/256x256/apps/demo.png",
 	} {

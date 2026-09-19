@@ -15,6 +15,8 @@ import (
 // Hooks are application-owned lifecycle callbacks composed around the
 // desktop-kit runtime.
 type Hooks struct {
+	// Ready exposes the Kit controller after the Wails runtime context is available.
+	Ready    func(*Controller)
 	Startup  func(context.Context)
 	DomReady func(context.Context)
 	Shutdown func(context.Context)
@@ -39,7 +41,12 @@ type Config struct {
 
 	// SingleInstance enables Wails' cross-platform single-instance lock.
 	SingleInstance bool
-	// SecondInstance overrides the default show-window behavior and preserves launch arguments.
+	// SecondInstancePolicy controls duplicate launches when SecondInstance is nil.
+	SecondInstancePolicy SecondInstancePolicy
+	// SecondInstanceAutoStartAliases extends the standard --autostart detection
+	// used by SecondInstanceWakeManual.
+	SecondInstanceAutoStartAliases []string
+	// SecondInstance overrides the built-in policy and preserves launch arguments.
 	SecondInstance func(*Controller, options.SecondInstanceData)
 }
 
@@ -87,6 +94,9 @@ func Run(cfg Config) error {
 		},
 		OnStartup: func(ctx context.Context) {
 			controller.setContext(ctx)
+			if cfg.Hooks.Ready != nil {
+				cfg.Hooks.Ready(controller)
+			}
 			if cfg.Hooks.Startup != nil {
 				cfg.Hooks.Startup(ctx)
 			}
@@ -114,7 +124,9 @@ func Run(cfg Config) error {
 			OnSecondInstanceLaunch: func(data options.SecondInstanceData) {
 				if cfg.SecondInstance != nil {
 					cfg.SecondInstance(controller, data)
-				} else {
+					return
+				}
+				if shouldWakeSecondInstance(cfg.SecondInstancePolicy, data.Args, cfg.SecondInstanceAutoStartAliases) {
 					controller.ShowWindow()
 				}
 			},
@@ -148,6 +160,11 @@ func validateConfig(cfg Config) error {
 	}
 	if cfg.Tray.AutoStart != nil && !cfg.Tray.Enabled {
 		return fmt.Errorf("desktop-kit: tray AutoStart requires tray to be enabled")
+	}
+	switch cfg.SecondInstancePolicy {
+	case SecondInstanceWakeAlways, SecondInstanceWakeManual, SecondInstanceIgnore:
+	default:
+		return fmt.Errorf("desktop-kit: invalid second instance policy %q", cfg.SecondInstancePolicy)
 	}
 	return nil
 }

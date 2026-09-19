@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/wanstu/wails-desktop-kit/atomicfile"
 	"github.com/wanstu/wails-desktop-kit/paths"
 	"github.com/zalando/go-keyring"
 )
@@ -325,34 +326,8 @@ func validateName(name string) error {
 }
 
 func writeAtomic(path string, data []byte) error {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return fmt.Errorf("secureconfig: create parent dir: %w", err)
-	}
-	f, err := os.CreateTemp(dir, ".secure-*.tmp")
-	if err != nil {
-		return fmt.Errorf("secureconfig: create temp file: %w", err)
-	}
-	temp := f.Name()
-	defer os.Remove(temp)
-
-	if err := f.Chmod(0o600); err != nil {
-		_ = f.Close()
-		return fmt.Errorf("secureconfig: protect temp file: %w", err)
-	}
-	if _, err := f.Write(data); err != nil {
-		_ = f.Close()
-		return fmt.Errorf("secureconfig: write temp file: %w", err)
-	}
-	if err := f.Sync(); err != nil {
-		_ = f.Close()
-		return fmt.Errorf("secureconfig: sync temp file: %w", err)
-	}
-	if err := f.Close(); err != nil {
-		return fmt.Errorf("secureconfig: close temp file: %w", err)
-	}
-	if err := os.Rename(temp, path); err != nil {
-		return fmt.Errorf("secureconfig: replace encrypted record: %w", err)
+	if err := atomicfile.Write(path, data, 0o600); err != nil {
+		return fmt.Errorf("secureconfig: write encrypted record: %w", err)
 	}
 	return nil
 }

@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.7.2
+## 安装 v0.8.0
 
-本文对应 **v0.7.2**。Linux 启用托盘时默认关闭窗口后保留后台进程，`desktopkit icon generate` 默认输出为 256×256。托盘点击行为交给平台托盘宿主与 systray 后端处理，不再在 Kit 中覆盖 Linux StatusNotifierItem 的点击语义。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.8.0**。本版集中消除消费者中的最后一公里重复：新增原子文件与泛型 JSON Store、显式配置迁移原语、Theme Preference 协议、重复启动策略、Controller Runtime helper、可选平台 CI、消费者 doctor/upgrade、Wails 图标准备和 Linux 多二进制 Packaging。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.7.2
+go get github.com/wanstu/wails-desktop-kit@v0.8.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.2
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.8.0` | 配置存储/迁移、重复启动策略、Runtime helper、可选平台 CI、doctor/upgrade、Wails 图标准备、多二进制 Linux Packaging |
 | `v0.7.2` | 回滚 Linux 托盘点击覆盖与临时 systray fork；保留默认关闭到托盘和 256×256 图标生成 |
 | `v0.7.1` | 尝试调整 Linux 托盘主激活行为，已在 v0.7.2 回滚 |
 | `v0.7.0` | Linux 默认关闭到托盘；`icon generate` 默认 256×256；其中托盘点击尝试已在 v0.7.2 回滚 |
@@ -72,10 +73,11 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `ui` | token、布局、表单、按钮、状态、对话框、导航 CSS 与 Theme Runtime JS | 页面结构、交互、数据和无障碍行为 |
 | `theme` | 远程 manifest、Theme CSS 下载、SHA-256 校验、全局缓存与本地 AssetServer | 保存用户的 theme mode / pack 选择 |
 | `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
-| `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`，默认 `~/.config/<app>` | 稳定 App ID |
+| `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`；显式文件/目录迁移原语 | 稳定 App ID 与迁移时机 |
+| `atomicfile` / `jsonstore` | 0600 原子替换、泛型 JSON Load/Save/Update、Normalize/Validate hook | 配置 schema、默认值和业务迁移版本 |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON | Secret 的逻辑 key 与业务生命周期 |
-| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz、桌面文件与图标安装、统一 SHA256；格式化 builder 结构便于后续 AppImage 等扩展 | 产品元数据、可选复杂格式 hook |
-| reusable workflow | 三平台并行构建、Packaging Pipeline、通用 post-package hook、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
+| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz、桌面文件、图标、多二进制安装、统一 SHA256 | 产品元数据、可选复杂格式 hook |
+| reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
 

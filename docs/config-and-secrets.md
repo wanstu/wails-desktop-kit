@@ -38,6 +38,46 @@ App ID 必须是稳定的 ASCII 路径安全标识，只允许字母、数字、
 
 这是一项**显式使用的路径约定**。仅仅升级 Kit 不会扫描或搬迁已有应用的 AppData、旧 `os.UserConfigDir()`、工作目录配置等位置。消费者应在自己的版本迁移中决定何时迁入 `~/.config/<app-id>`，并在成功后再清理旧数据。
 
+v0.8.0 提供显式迁移原语，但仍由业务决定迁移源、目标和时机：
+
+~~~go
+migrated, err := kitpaths.MigrateFileIfMissing(oldSettings, newSettings)
+count, err := kitpaths.MigrateFilesIfMissing(oldDir, newDir,
+    "settings.json", "known_hosts.json",
+)
+count, err = kitpaths.MigrateTreeMissing(
+    filepath.Join(oldDir, "instances"),
+    filepath.Join(newDir, "instances"),
+)
+~~~
+
+所有 helper 都只补目标中缺失的普通文件，不覆盖现有数据；递归迁移跳过 symlink。
+
+## 普通 JSON 配置
+
+v0.8.0 新增 `atomicfile` 和泛型 `jsonstore`。Kit 负责可靠写入与并发串行化，业务继续拥有 schema、默认值、Normalize、Validate 和版本迁移：
+
+~~~go
+store := jsonstore.New(path, jsonstore.Options[Settings]{
+    Default: DefaultSettings,
+    Normalize: func(value *Settings) {
+        normalizeSettings(value)
+    },
+    Validate: func(value Settings) error {
+        return value.Validate()
+    },
+})
+
+settings, err := store.Load()
+err = store.Save(settings)
+settings, err = store.Update(func(value *Settings) error {
+    value.Theme = "dark"
+    return nil
+})
+~~~
+
+底层使用同目录临时文件、权限设置、Sync 和原子 Rename。需要写其他非 JSON 小文件时可直接使用 `atomicfile.Write` / `atomicfile.Copy`。
+
 ## 为什么普通配置和 Secret 要分开
 
 普通设置可以继续保存为可读 JSON，例如：

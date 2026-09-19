@@ -30,6 +30,11 @@ var (
 	appNamePattern     = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._+-]*$`)
 )
 
+type LinuxBinary struct {
+	Source      string
+	InstallName string
+}
+
 type LinuxRequest struct {
 	Input          string
 	OutputDir      string
@@ -45,6 +50,7 @@ type LinuxRequest struct {
 	Depends        string
 	DesktopFile    string
 	IconFile       string
+	ExtraBinaries  []LinuxBinary
 	Formats        []Format
 }
 
@@ -137,6 +143,10 @@ func normalizeLinuxRequest(request LinuxRequest) LinuxRequest {
 	request.Depends = strings.TrimSpace(request.Depends)
 	request.DesktopFile = strings.TrimSpace(request.DesktopFile)
 	request.IconFile = strings.TrimSpace(request.IconFile)
+	for i := range request.ExtraBinaries {
+		request.ExtraBinaries[i].Source = filepath.Clean(strings.TrimSpace(request.ExtraBinaries[i].Source))
+		request.ExtraBinaries[i].InstallName = strings.TrimSpace(request.ExtraBinaries[i].InstallName)
+	}
 	if request.PackageName == "" {
 		request.PackageName = normalizePackageName(request.AppName)
 	}
@@ -211,6 +221,26 @@ func validateLinuxRequest(request LinuxRequest) error {
 			return fmt.Errorf("%s must be a regular file", optional.name)
 		}
 	}
+	names := map[string]struct{}{request.AppName: {}}
+	for _, binary := range request.ExtraBinaries {
+		if binary.Source == "" || binary.Source == "." {
+			return errors.New("extra binary source is required")
+		}
+		if !appNamePattern.MatchString(binary.InstallName) {
+			return fmt.Errorf("invalid extra binary install name %q", binary.InstallName)
+		}
+		if _, exists := names[binary.InstallName]; exists {
+			return fmt.Errorf("duplicate installed binary name %q", binary.InstallName)
+		}
+		names[binary.InstallName] = struct{}{}
+		info, err := os.Stat(binary.Source)
+		if err != nil {
+			return fmt.Errorf("stat extra binary %q: %w", binary.InstallName, err)
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("extra binary %q must be a regular file", binary.InstallName)
+		}
+	}
 	for _, format := range request.Formats {
 		switch format {
 		case FormatRaw, FormatDeb, FormatTarGz:
@@ -262,6 +292,11 @@ func (linuxTarGzBuilder) Build(request LinuxRequest) (string, error) {
 
 	if err := addTarFile(tw, request.Input, filepath.ToSlash(filepath.Join(root, request.AppName)), 0o755); err != nil {
 		return "", err
+	}
+	for _, binary := range request.ExtraBinaries {
+		if err := addTarFile(tw, binary.Source, filepath.ToSlash(filepath.Join(root, binary.InstallName)), 0o755); err != nil {
+			return "", err
+		}
 	}
 	if request.DesktopFile != "" {
 		if err := addTarFile(tw, request.DesktopFile, filepath.ToSlash(filepath.Join(root, request.PackageName+".desktop")), 0o644); err != nil {
@@ -374,6 +409,17 @@ func buildDataTarGz(request LinuxRequest) ([]byte, error) {
 		data: binary,
 		mode: 0o755,
 	}}
+	for _, extra := range request.ExtraBinaries {
+		data, err := os.ReadFile(extra.Source)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, tarEntry{
+			name: "./usr/bin/" + extra.InstallName,
+			data: data,
+			mode: 0o755,
+		})
+	}
 	if request.DesktopFile != "" {
 		data, err := os.ReadFile(request.DesktopFile)
 		if err != nil {
