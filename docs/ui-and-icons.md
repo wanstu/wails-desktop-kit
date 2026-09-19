@@ -83,7 +83,37 @@ input、select、textarea 放在 `dk-field` 内才会获得相应表单样式。
 }
 ~~~
 
-当前默认是浅色主题；部分组件还有固定颜色，不能只改一个 token 就宣称完整支持暗色主题。迁移时逐页检查控件、hover、focus、disabled 和窄窗口布局。
+Kit UI 提供 `light / dark / system` 三种通用主题模式，但**不负责用户设置持久化，也不决定产品默认主题**。
+
+最基础的静态用法仍可直接声明：
+
+~~~html
+<html lang="zh-CN" data-dk-theme="dark">
+~~~
+
+需要运行时切换或跟随系统时，加载公共主题机制：
+
+~~~html
+<script src="/desktopkit/theme.js"></script>
+<script>
+  desktopKitTheme.apply("system");
+</script>
+~~~
+
+API：
+
+- `desktopKitTheme.apply("light")`：应用 Kit Light。
+- `desktopKitTheme.apply("dark")`：应用 Kit Dark。
+- `desktopKitTheme.apply("system")`：监听 `prefers-color-scheme`，系统变化时更新公共主题。
+- `desktopKitTheme.getMode()`：返回应用最后显式选择的模式。
+- `desktopKitTheme.getResolvedTheme()`：返回当前实际生效的 `light` 或 `dark`。
+- `desktopKitTheme.dispose()`：移除 system 监听，适合测试或特殊生命周期。
+
+Kit 启动时不会主动读取 `localStorage`、配置文件或系统偏好，因此旧应用升级不会突然改变外观。应用负责保存自己的 `theme = light | dark | system`，并在启动时调用 `apply`。
+
+公共组件颜色全部通过 `--dk-*` token 获取。产品可以在 `app.css` 中针对自己的品牌主题覆盖 token，例如 Midnight、Graphite、FRP Blue，而不需要复制 Kit 组件 CSS。Kit 不提供 `KitThemeSSH`、`KitThemeFRP` 之类产品枚举。
+
+自定义主题至少应覆盖背景、文字、边框、primary、状态色、导航 active、control、backdrop 与 log token，并逐页检查 hover、focus、disabled 和窄窗口布局。
 
 如果使用独立前端开发服务器，`kitui.Mount` 不会自动给那个服务器增加路由。请配置开发资源代理或样式提供方式，并在 Wails production build 中验证最终路径。
 
@@ -92,7 +122,7 @@ input、select、textarea 放在 `dk-field` 内才会获得相应表单样式。
 按首页版本选择安装。下面固定本轮修复版本：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.2.0
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.2.2
 desktopkit icon --input assets/icons/source.png --output build/appicon.png --canvas 1024 --fill 0.94
 ~~~
 

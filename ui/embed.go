@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//go:embed assets/*.css
+//go:embed assets/*.css assets/*.js
 var embedded embed.FS
 
 type mountedFS struct{ app fs.FS }

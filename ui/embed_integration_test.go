@@ -16,7 +16,7 @@ func (silentLog) Debug(string, ...interface{}) {}
 func (silentLog) Error(string, ...interface{}) {}
 func TestMountedFilesystemContract(t *testing.T) {
 	m := Mount(fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("app")}})
-	if err := fstest.TestFS(m, "index.html", "desktopkit/tokens.css", "desktopkit/base.css", "desktopkit/components.css", "desktopkit/navigation.css"); err != nil {
+	if err := fstest.TestFS(m, "index.html", "desktopkit/tokens.css", "desktopkit/base.css", "desktopkit/components.css", "desktopkit/navigation.css", "desktopkit/theme.js"); err != nil {
 		t.Fatal(err)
 	}
 	for _, name := range []string{"/index.html", "../index.html", "desktopkit/../index.html", "desktopkit//tokens.css"} {
@@ -41,7 +41,7 @@ func TestWailsServesMountedStylesFromExplicitFrontendRoot(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, url := range []string{"/index.html", "/desktopkit/tokens.css", "/desktopkit/components.css"} {
+			for _, url := range []string{"/index.html", "/desktopkit/tokens.css", "/desktopkit/components.css", "/desktopkit/theme.js"} {
 				rec := httptest.NewRecorder()
 				handler.ServeHTTP(rec, httptest.NewRequest("GET", url, nil))
 				if rec.Code != 200 || rec.Body.Len() == 0 {
