@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.6.0
+## 安装 v0.6.1
 
-本文对应 **v0.6.0**。在 v0.5.x Runtime Theme / `.deb` 基础上新增可扩展 Packaging Pipeline：Kit CLI 可统一生成 Linux `raw / .deb / .tar.gz` 与 SHA256，reusable workflow 支持通用 post-package hook，后续增加 AppImage、DMG、MSI 等格式时不需要重写 Release 汇总逻辑。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.6.1**。Packaging Pipeline 延续 v0.6.0 的 Linux `raw / .deb / .tar.gz`、SHA256 与通用 post-package hook，并新增 Linux CI 的真实 `.deb` / `.tar.gz` 格式验收，确保 Kit 自己生成的包可以被 `dpkg-deb` / `tar` 正常解析。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.6.0
+go get github.com/wanstu/wails-desktop-kit@v0.6.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.6.1` | Packaging Pipeline 增加 Linux CI 真实包格式验收：dpkg-deb / tar / SHA256 全链路验证 |
 | `v0.6.0` | Packaging Pipeline 支持 raw / deb / tar.gz、统一 SHA256、Debian 桌面元数据与通用 post-package hook；包含 v0.5.2 的 Debian 换行修复 |
 | `v0.5.2` | 热修 v0.5.1 Debian control Description 最终换行，恢复 `.deb` consumer CI |
 | `v0.5.1` | reusable workflow 新增可选 Linux `.deb` 产物与 SHA256 校验；默认关闭 |
