@@ -125,7 +125,7 @@ desktopKitTheme.apply("system");
 desktopKitTheme.setPack("midnight");
 ~~~
 
-Kit 只维护主题协议和默认 light/dark token，不内置 Midnight、Graphite、Forest 等可选主题包。官方可选通用主题应放在独立模块 `github.com/wanstu/wails-desktop-kit-themes`；产品品牌主题仍由具体应用维护。主题包 CSS 必须只覆盖 `--dk-*` token，不重新定义 `.dk-button`、`.dk-panel`、`.dk-nav-link` 等组件规则。
+Kit 只维护主题协议和默认 light/dark token，不内置 Midnight、Graphite、Forest 等可选主题包。官方可选通用主题应放在独立模块 `github.com/wanstu/wails-desktop-kit-theme`；产品品牌主题仍由具体应用维护。主题包 CSS 必须只覆盖 `--dk-*` token，不重新定义 `.dk-button`、`.dk-panel`、`.dk-nav-link` 等组件规则。
 
 自定义主题至少应覆盖背景、文字、边框、primary、状态色、导航 active、control、backdrop 与 log token，并逐页检查 hover、focus、disabled 和窄窗口布局。
 
