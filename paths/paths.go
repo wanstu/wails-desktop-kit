@@ -64,6 +64,37 @@ func ConfigDir(appID string) (string, error) {
 	return filepath.Join(root, appID), nil
 }
 
+// CacheRoot returns the Kit cache root. XDG_CACHE_HOME wins when set;
+// otherwise Kit standardizes on ~/.cache on every OS.
+func CacheRoot() (string, error) {
+	if configured := strings.TrimSpace(os.Getenv("XDG_CACHE_HOME")); configured != "" {
+		if !filepath.IsAbs(configured) {
+			return "", fmt.Errorf("paths: XDG_CACHE_HOME must be absolute: %q", configured)
+		}
+		return filepath.Clean(configured), nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("paths: resolve user home: %w", err)
+	}
+	if strings.TrimSpace(home) == "" {
+		return "", errors.New("paths: user home is empty")
+	}
+	return filepath.Join(home, ".cache"), nil
+}
+
+// CacheDir returns ~/.cache/<appID> (or $XDG_CACHE_HOME/<appID>).
+func CacheDir(appID string) (string, error) {
+	if err := ValidateAppID(appID); err != nil {
+		return "", err
+	}
+	root, err := CacheRoot()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, appID), nil
+}
+
 // EnsureConfigDir creates and returns the app configuration directory.
 func EnsureConfigDir(appID string) (string, error) {
 	dir, err := ConfigDir(appID)
@@ -72,6 +103,18 @@ func EnsureConfigDir(appID string) (string, error) {
 	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", fmt.Errorf("paths: create config dir: %w", err)
+	}
+	return dir, nil
+}
+
+// EnsureCacheDir creates and returns the app cache directory.
+func EnsureCacheDir(appID string) (string, error) {
+	dir, err := CacheDir(appID)
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("paths: create cache dir: %w", err)
 	}
 	return dir, nil
 }

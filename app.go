@@ -34,6 +34,7 @@ type Config struct {
 	Launch LaunchOptions
 	Window WindowConfig
 	Tray   TrayConfig
+	Theme  ThemeConfig
 	Hooks  Hooks
 
 	// SingleInstance enables Wails' cross-platform single-instance lock.
@@ -50,6 +51,7 @@ func Run(cfg Config) error {
 
 	window := cfg.Window.normalized()
 	trayCfg := cfg.Tray.normalized(cfg.Title)
+	themeMiddleware := newThemeAssetMiddleware(cfg.Theme)
 	hideOnClose := canHideCurrentPlatform(window.HidePolicy, trayCfg.Enabled && traySupported)
 	startHidden := cfg.Launch.AutoStart && window.StartHiddenOnAutoStart && hideOnClose
 	controller := newController(hideOnClose, startHidden)
@@ -76,7 +78,7 @@ func Run(cfg Config) error {
 			tray.Shutdown(ctx)
 			return false
 		},
-		AssetServer: &assetserver.Options{Assets: cfg.Assets},
+		AssetServer: &assetserver.Options{Assets: cfg.Assets, Middleware: themeMiddleware},
 		BackgroundColour: &options.RGBA{
 			R: window.Background.R,
 			G: window.Background.G,

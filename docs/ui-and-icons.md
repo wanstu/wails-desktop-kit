@@ -107,7 +107,11 @@ API：
 - `desktopKitTheme.apply("system")`：监听 `prefers-color-scheme`，系统变化时更新公共主题。
 - `desktopKitTheme.getMode()`：返回应用最后显式选择的模式。
 - `desktopKitTheme.getResolvedTheme()`：返回当前实际生效的 `light` 或 `dark`。
-- `desktopKitTheme.setPack("midnight")`：设置可选主题包标识，只写入 `data-dk-theme-pack`，不负责加载 CSS。
+- `desktopKitTheme.setPack("midnight")`：兼容低层 API，只设置 `data-dk-theme-pack`。
+- `desktopKitTheme.applyPack("midnight")`：从 Runtime Theme 本地路由加载对应 CSS，并应用该 Theme Pack。
+- `desktopKitTheme.loadCatalog()`：读取当前 Theme catalog；优先返回本地 last-known-good / 内置 fallback，并按需后台刷新。
+- `desktopKitTheme.refreshCatalog()`：显式请求最新远程 Theme catalog；失败时仍返回可用的缓存或 4 个内置 fallback。
+- `desktopKitTheme.getCatalog()`：返回当前前端已加载的 catalog。
 - `desktopKitTheme.getPack()`：返回当前主题包名称；未设置时返回空字符串。
 - `desktopKitTheme.clearPack()`：移除当前主题包标识。
 - `desktopKitTheme.dispose()`：移除 system 监听，适合测试或特殊生命周期。
@@ -125,7 +129,7 @@ desktopKitTheme.apply("system");
 desktopKitTheme.setPack("midnight");
 ~~~
 
-Kit 只维护主题协议和默认 light/dark token，不内置 Midnight、Graphite、Forest 等可选主题包。官方可选通用主题应放在独立模块 `github.com/wanstu/wails-desktop-kit-theme`；产品品牌主题仍由具体应用维护。主题包 CSS 必须只覆盖 `--dk-*` token，不重新定义 `.dk-button`、`.dk-panel`、`.dk-nav-link` 等组件规则。
+Kit 除默认 light/dark token 外，还固定内置 `aurora`、`ocean`、`forest`、`sunset` 4 个 fallback Theme Pack，保证完全离线时仍有基础配色可选。完整官方主题集仍由独立仓库 `github.com/wanstu/wails-desktop-kit-theme` 通过 Runtime Theme manifest 动态提供；新增或更新远程主题不要求应用重新构建。产品品牌主题仍由具体应用维护。主题包 CSS 必须只覆盖 `--dk-*` token，不重新定义 `.dk-button`、`.dk-panel`、`.dk-nav-link` 等组件规则。
 
 自定义主题至少应覆盖背景、文字、边框、primary、状态色、导航 active、control、backdrop 与 log token，并逐页检查 hover、focus、disabled 和窄窗口布局。
 
