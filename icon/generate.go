@@ -12,7 +12,7 @@ import (
 	"unicode"
 )
 
-// BadgeOptions describes a small, deterministic product-family application icon.
+// BadgeOptions describes a deterministic product-family application icon.
 // It deliberately avoids system fonts so output is identical on every platform.
 type BadgeOptions struct {
 	Size       int
@@ -27,9 +27,9 @@ type BadgeOptions struct {
 // DefaultBadgeOptions returns the shared Kit family-icon defaults.
 func DefaultBadgeOptions() BadgeOptions {
 	return BadgeOptions{
-		Size:       32,
-		Inset:      2,
-		Radius:     7,
+		Size:       256,
+		Inset:      16,
+		Radius:     56,
 		Background: color.NRGBA{R: 0x24, G: 0x63, B: 0xeb, A: 0xff},
 		Foreground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		Symbol:     "terminal",

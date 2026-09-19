@@ -43,7 +43,7 @@ func DefaultWindowConfig() WindowConfig {
 		Height:                 720,
 		MinWidth:               720,
 		MinHeight:              520,
-		HidePolicy:             HideSafe,
+		HidePolicy:             HideAlways,
 		StartHiddenOnAutoStart: true,
 		Background:             Color{R: 246, G: 247, B: 249, A: 1},
 	}

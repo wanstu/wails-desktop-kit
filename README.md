@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.6.1
+## 安装 v0.7.0
 
-本文对应 **v0.6.1**。Packaging Pipeline 延续 v0.6.0 的 Linux `raw / .deb / .tar.gz`、SHA256 与通用 post-package hook，并新增 Linux CI 的真实 `.deb` / `.tar.gz` 格式验收，确保 Kit 自己生成的包可以被 `dpkg-deb` / `tar` 正常解析。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.7.0**。Linux 托盘默认改为常驻：主窗口关闭后隐藏到托盘；StatusNotifierItem 的主激活与菜单动作分离，左键恢复窗口、右键打开菜单。`desktopkit icon generate` 默认输出同步提升为 256×256。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.6.1
+go get github.com/wanstu/wails-desktop-kit@v0.7.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.1
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -24,12 +24,13 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 采用命名字段 Config、声明式菜单，并直接传入 `*autostart.Manager` 的已有用法可以继续编译。新增 hook 都是可选项，通常无需修改业务逻辑。
 
-本轮仍有需要核对的边界：AutoStart 字段类型由具体指针改为接口，依赖其具体类型的读取代码需适配；主动退出、隐藏时机及 UI 资源根目录需符合 [升级契约](docs/runtime-hardening.md)。FRP 将 HideAlways 改为 HideSafe 是主动调整 Linux 产品行为，不是适配新 API 的必要改动。
+旧版升级仍有需要核对的边界：AutoStart 字段类型由具体指针改为接口，依赖其具体类型的读取代码需适配；主动退出、隐藏时机及 UI 资源根目录需符合 [升级契约](docs/runtime-hardening.md)。早期 FRP 曾显式使用 HideSafe；v0.7.0 起 Kit 默认改为 HideAlways，但应用仍可显式选择任一策略。
 
 后续升级以保持常规用法兼容为目标；需要使用方修改源码或改变行为的变更会在升级说明中明确列出。这里不承诺所有未来版本都可无条件替换。
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.7.0` | Linux 默认关闭到托盘；左键恢复窗口、右键菜单；`icon generate` 默认 256×256 |
 | `v0.6.1` | Packaging Pipeline 增加 Linux CI 真实包格式验收：dpkg-deb / tar / SHA256 全链路验证 |
 | `v0.6.0` | Packaging Pipeline 支持 raw / deb / tar.gz、统一 SHA256、Debian 桌面元数据与通用 post-package hook；包含 v0.5.2 的 Debian 换行修复 |
 | `v0.5.2` | 热修 v0.5.1 Debian control Description 最终换行，恢复 `.deb` consumer CI |
@@ -78,14 +79,14 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 ## 默认窗口行为
 
-修复版默认采用 `HideSafe`：
+v0.7.0 默认采用 `HideAlways`：
 
-- Windows/macOS：托盘就绪后才允许关闭到托盘；故障时恢复窗口。
-- Linux：暂不自动隐藏，也不响应隐藏请求。关闭窗口会正常退出应用，业务退出清理由应用决定。
-- 自动启动：Windows/macOS 先显示，托盘就绪后按配置隐藏，因此可能短暂看到窗口。
+- Windows/macOS/Linux：启用托盘且托盘后端就绪后，关闭主窗口默认隐藏到托盘，不结束进程。
+- Linux：左键托盘图标恢复主窗口，右键打开托盘菜单。
+- 自动启动：托盘就绪后按配置隐藏，因此启动阶段仍可能短暂看到窗口。
 - 特殊退出：使用 `Controller.Quit()`；需要停止业务进程时，先完成业务清理再调用它。
 
-Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。`HideAlways` 需要应用承担这一环境前提；它仍不会绕过托盘后端就绪检查。
+如产品明确希望 Linux 点 × 直接退出，可显式设置 `HideSafe` 或 `HideNever`；`HideAlways` 仍要求托盘后端实际就绪。
 
 ## 当前验收状态
 
