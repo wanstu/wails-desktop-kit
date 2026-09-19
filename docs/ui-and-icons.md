@@ -133,14 +133,41 @@ Kit 只维护主题协议和默认 light/dark token，不内置 Midnight、Graph
 
 ## 图标 CLI
 
-按首页版本选择安装。下面固定本轮修复版本：
+v0.3.1 起，`desktopkit icon` 同时提供 **generate**（确定性生成产品家族图标）和 **normalize**（规范化已有图片）两条路径。原有 `desktopkit icon --input ...` 用法保持兼容。
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.2.2
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.3.1
+
+# SSH / Terminal 家族图标
+desktopkit icon generate --output assets/appicon.png --symbol terminal --background "#2463EB"
+
+# FRP 这类单字母家族图标
+desktopkit icon generate --output assets/appicon.png --symbol monogram --text F --background "#2463EB"
+
+# 原有图片规范化仍然兼容
 desktopkit icon --input assets/icons/source.png --output build/appicon.png --canvas 1024 --fill 0.94
 ~~~
 
 也可在 Kit 源码根目录执行 `go run ./cmd/desktopkit icon ...`。
+
+### generate 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `--output` | 必填 | PNG 输出路径 |
+| `--size` | 32 | 16–1024 的正方形尺寸 |
+| `--inset` | 2 | 透明外边距 |
+| `--radius` | 7 | 圆角半径 |
+| `--symbol` | terminal | `terminal` 或 `monogram` |
+| `--text` | 空 | monogram 使用；一个 ASCII 字母或数字 |
+| `--background` | #2463EB | `#RRGGBB` 或 `#RRGGBBAA` |
+| `--foreground` | #FFFFFF | 前景色 |
+
+默认生成规格与 FRP Client 的现有产品家族保持一致：透明 32×32 画布、纯色圆角底、白色几何 glyph。生成过程不调用系统字体，因此 Windows/Linux/macOS 输出一致。
+
+对应 Go API 使用 `icon.DefaultBadgeOptions()` 与 `icon.GenerateBadgeFile(...)`。
+
+### normalize 参数
 
 | 参数 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -155,6 +182,6 @@ Go API 的零值约定同样影响 CLI：canvas=0、fill=0 会采用默认值。
 
 修复版在解码前检查输入最多 **16,777,216 像素**；双线性插值处理透明边缘，输出先写同目录临时文件，成功后替换目标。失败时保留原输出，支持输入和输出同路径。
 
-CLI 只规范化 PNG，不负责生成所有平台安装包、ICO／ICNS、签名或发布。Wails 的应用图标通常放 `build/appicon.png`；托盘图标由应用嵌入自己的资源文件。产品脚本需要显式调用 CLI，安装 Kit 不会自动替换旧脚本。
+Kit 的 generate / normalize 都只负责得到稳定 PNG，不负责安装包、签名或发布。Wails 继续从 `build/appicon.png` 派生 Windows ICO、macOS ICNS 等平台资产；托盘图标仍由应用显式嵌入。产品脚本需要显式调用 CLI，安装 Kit 不会自动覆盖应用资源。
 
-FRP 当前尚未将 UI 或图标脚本迁移到本页方案。
+建议把生成后的 `assets/appicon.png` 提交进仓库，同时在构建脚本中再次调用 `desktopkit icon generate`，让日常 `go test` 有可嵌入资源，正式构建又能校验图标没有漂移。

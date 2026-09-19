@@ -8,7 +8,19 @@ import (
 	kiticon "github.com/wanstu/wails-desktop-kit/icon"
 )
 
-const usage = "desktopkit - Wails Desktop Kit engineering helper\n\nUsage:\n  desktopkit icon [options]\n\nCommands:\n  icon    Normalize one application/tray/window image onto a square PNG canvas.\n"
+const usage = `desktopkit - Wails Desktop Kit engineering helper
+
+Usage:
+  desktopkit icon [normalize options]
+  desktopkit icon normalize [options]
+  desktopkit icon generate [options]
+
+Commands:
+  icon normalize    Normalize a PNG/JPEG/GIF onto a square transparent PNG canvas.
+  icon generate     Generate a deterministic Kit family icon without system fonts.
+
+Existing "desktopkit icon --input ... --output ..." remains compatible.
+`
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -34,8 +46,23 @@ func run(args []string) error {
 }
 
 func runIcon(args []string) error {
+	if len(args) > 0 {
+		switch args[0] {
+		case "generate":
+			return runIconGenerate(args[1:])
+		case "normalize":
+			return runIconNormalize(args[1:])
+		case "help", "-h", "--help":
+			fmt.Print(usage)
+			return nil
+		}
+	}
+	return runIconNormalize(args)
+}
+
+func runIconNormalize(args []string) error {
 	opts := kiticon.DefaultOptions()
-	flags := flag.NewFlagSet("desktopkit icon", flag.ContinueOnError)
+	flags := flag.NewFlagSet("desktopkit icon normalize", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 
 	var input string
@@ -70,5 +97,51 @@ func runIcon(args []string) error {
 		return err
 	}
 	fmt.Printf("normalized icon: %s -> %s\n", input, output)
+	return nil
+}
+
+func runIconGenerate(args []string) error {
+	opts := kiticon.DefaultBadgeOptions()
+	flags := flag.NewFlagSet("desktopkit icon generate", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+
+	var output string
+	var background string
+	var foreground string
+
+	flags.StringVar(&output, "output", "", "destination PNG path")
+	flags.IntVar(&opts.Size, "size", opts.Size, "square output size in pixels (16-1024)")
+	flags.IntVar(&opts.Inset, "inset", opts.Inset, "transparent outer inset in pixels")
+	flags.IntVar(&opts.Radius, "radius", opts.Radius, "rounded-square corner radius in pixels")
+	flags.StringVar(&opts.Symbol, "symbol", opts.Symbol, "symbol: terminal or monogram")
+	flags.StringVar(&opts.Text, "text", "", "single ASCII letter/digit for monogram")
+	flags.StringVar(&background, "background", "#2463EB", "background color #RRGGBB or #RRGGBBAA")
+	flags.StringVar(&foreground, "foreground", "#FFFFFF", "foreground color #RRGGBB or #RRGGBBAA")
+
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if flags.NArg() != 0 {
+		return fmt.Errorf("unexpected arguments: %v", flags.Args())
+	}
+	if output == "" {
+		return fmt.Errorf("--output is required")
+	}
+
+	bg, err := kiticon.ParseHexColor(background)
+	if err != nil {
+		return fmt.Errorf("--background: %w", err)
+	}
+	fg, err := kiticon.ParseHexColor(foreground)
+	if err != nil {
+		return fmt.Errorf("--foreground: %w", err)
+	}
+	opts.Background = bg
+	opts.Foreground = fg
+
+	if err := kiticon.GenerateBadgeFile(output, opts); err != nil {
+		return err
+	}
+	fmt.Printf("generated icon: %s (%s)\n", output, opts.Symbol)
 	return nil
 }

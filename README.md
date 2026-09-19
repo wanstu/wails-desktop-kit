@@ -4,18 +4,18 @@
 
 首个实际消费者是 [FRP Client Manager](https://github.com/wanstu/frp-client-manager)。IME Lock、AI Dev Manager、CodexPro+ 尚未接入。
 
-## 安装 v0.3.0
+## 安装 v0.3.1
 
-本文对应 **v0.3.0**。该版本在 v0.2.2 的 token 驱动 light / dark / system 主题基础上，新增独立的 Theme Pack 协议：`data-dk-theme-pack` 与 `setPack/getPack/clearPack`。可选通用主题包由独立模块 `wails-desktop-kit-theme` 提供，Kit 本体继续只维护协议和默认主题；完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.3.1**。在 v0.3.0 Theme Pack 协议基础上，新增无字体依赖的产品家族图标生成器：应用可直接生成统一的圆角底色 + `>_` Terminal 或单字符 Monogram 图标；原有图片规范化 CLI 保持兼容。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.3.0
+go get github.com/wanstu/wails-desktop-kit@v0.3.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.3.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.3.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.3.1` | 新增确定性 Kit 家族图标生成器：Terminal / Monogram；保留原 normalize CLI |
 | `v0.3.0` | 新增 Theme Pack 协议，与 light / dark / system 明暗模式正交；可选主题拆到独立模块 |
 | `v0.2.2` | token 驱动的完整暗色主题契约；公共组件不再写死浅色颜色值 |
 | `v0.2.1` | 修复 tag Release 产物文件名，产物自动包含版本号 |
@@ -58,7 +59,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | 根包 `desktopkit` | Wails 生命周期、单实例、窗口控制、托盘菜单与失败恢复 | 应用 ID、标题、资源、绑定对象、业务回调 |
 | `autostart` | Windows Run、Linux desktop entry、macOS LaunchAgent | 稳定 ID、启动参数、启用／禁用入口 |
 | `ui` | token、布局、表单、按钮、状态、对话框和导航 CSS | 页面结构、交互、数据和无障碍行为 |
-| `icon`／`cmd/desktopkit` | 透明边缘裁剪、等比缩放、方形 PNG 输出 | 原始图标、构建脚本中的调用位置 |
+| `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
 | reusable workflow | 三平台并行构建、产物归档、SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
@@ -76,6 +77,6 @@ Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。
 
 ## 当前验收状态
 
-Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.3.0 在此基础上增加 Theme Pack 协议，并保持 Runtime API 与原有 light / dark / system 调用方式兼容。
+Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.3.1 在 v0.3.0 Theme Pack 协议基础上增加图标生成能力；Runtime、主题与原有 icon normalize API 保持兼容。
 
 桌面菜单操作、真实登录自启、宿主丢失与消费者 tag Release 的验收仍待完成。详见 [进度与待办](docs/status.md)。
