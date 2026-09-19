@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [master, main]
   workflow_dispatch:
+    inputs:
+      verify-module:
+        description: "Optional published Go module version to verify"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -39,6 +45,13 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+
+      - name: Verify published Go module
+        if: inputs.verify-module != '' && runner.os == 'Linux'
+        shell: bash
+        env:
+          MODULE_VERSION: ${{ inputs.verify-module }}
+        run: go mod download -json "github.com/wanstu/wails-desktop-kit@$MODULE_VERSION"
 
       - name: Install Linux Wails dependencies
         if: runner.os == 'Linux'
