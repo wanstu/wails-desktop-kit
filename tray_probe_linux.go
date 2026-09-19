@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus/v5"
-	"github.com/wanstu/systray"
+	"github.com/gogpu/systray"
 )
 
 func trayLoopWake() func() { return func() {} }

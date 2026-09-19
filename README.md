@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.7.1
+## 安装 v0.7.2
 
-本文对应 **v0.7.1**。Linux 托盘默认改为常驻：主窗口关闭后隐藏到托盘；StatusNotifierItem 的主激活与菜单动作分离，左键恢复窗口、右键打开菜单。`desktopkit icon generate` 默认输出同步提升为 256×256。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.7.2**。Linux 启用托盘时默认关闭窗口后保留后台进程，`desktopkit icon generate` 默认输出为 256×256。托盘点击行为交给平台托盘宿主与 systray 后端处理，不再在 Kit 中覆盖 Linux StatusNotifierItem 的点击语义。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.7.1
+go get github.com/wanstu/wails-desktop-kit@v0.7.2
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.1
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.2
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,8 +30,9 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
-| `v0.7.1` | Linux tray 修复改为可传递的直接模块依赖，消费者无需 replace 即可获得左键恢复窗口行为 |
-| `v0.7.0` | Linux 默认关闭到托盘；左键恢复窗口、右键菜单；`icon generate` 默认 256×256 |
+| `v0.7.2` | 回滚 Linux 托盘点击覆盖与临时 systray fork；保留默认关闭到托盘和 256×256 图标生成 |
+| `v0.7.1` | 尝试调整 Linux 托盘主激活行为，已在 v0.7.2 回滚 |
+| `v0.7.0` | Linux 默认关闭到托盘；`icon generate` 默认 256×256；其中托盘点击尝试已在 v0.7.2 回滚 |
 | `v0.6.1` | Packaging Pipeline 增加 Linux CI 真实包格式验收：dpkg-deb / tar / SHA256 全链路验证 |
 | `v0.6.0` | Packaging Pipeline 支持 raw / deb / tar.gz、统一 SHA256、Debian 桌面元数据与通用 post-package hook；包含 v0.5.2 的 Debian 换行修复 |
 | `v0.5.2` | 热修 v0.5.1 Debian control Description 最终换行，恢复 `.deb` consumer CI |
@@ -80,10 +81,10 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 ## 默认窗口行为
 
-v0.7.0 默认采用 `HideAlways`：
+v0.7.0 起默认采用 `HideAlways`：
 
 - Windows/macOS/Linux：启用托盘且托盘后端就绪后，关闭主窗口默认隐藏到托盘，不结束进程。
-- Linux：左键托盘图标恢复主窗口，右键打开托盘菜单。
+- Linux 托盘的单击、双击与菜单交互由桌面环境和 systray 后端决定，Kit 不覆盖宿主的点击语义。
 - 自动启动：托盘就绪后按配置隐藏，因此启动阶段仍可能短暂看到窗口。
 - 特殊退出：使用 `Controller.Quit()`；需要停止业务进程时，先完成业务清理再调用它。
 

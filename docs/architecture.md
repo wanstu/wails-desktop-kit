@@ -39,7 +39,7 @@ Wails 拥有应用主循环。Windows/Linux 托盘后端在专用 OS 线程上�
 
 配置允许隐藏、托盘后端可用、桌面上存在可见入口是不同条件。Windows 检查 shell 图标位置；macOS 检查原生状态项创建；Linux 检查本进程的 StatusNotifierItem 注册。
 
-Linux 的 `HideSafe` 仍保留保守语义，但 v0.7.0 的默认窗口策略改为 `HideAlways`。StatusNotifierItem 主激活与 dbusmenu 分离：左键恢复窗口，右键菜单。托盘后端仍需完成就绪探测后才允许隐藏窗口。
+Linux 的 `HideSafe` 仍保留保守语义，但 v0.7.0 的默认窗口策略改为 `HideAlways`。托盘点击行为继续由桌面环境与 systray 后端决定；托盘后端仍需完成就绪探测后才允许隐藏窗口。
 
 ## 扩展点的用途
 
