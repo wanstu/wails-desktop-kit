@@ -8,7 +8,7 @@
 
 第一阶段公共抽象已经可用，FRP 已实际复用 Runtime／tray／autostart／CI。Review 后的关键修复已提交推送，Kit 和 FRP 的三平台 CI 全绿。
 
-当前发布目标为 **Kit v0.3.1**。v0.3.0 已增加独立 Theme Pack 协议；v0.3.1 在保持 Runtime、主题与原有 icon normalize API 兼容的前提下，新增无字体依赖的 Terminal / Monogram 产品家族图标生成器。消费者应同时固定 Go Module 与 reusable workflow 版本。
+当前发布目标为 **Kit v0.4.0**。v0.3.x 已提供 Theme Pack 协议与产品家族图标生成器；v0.4.0 在保持 Runtime、主题和图标 API 兼容的前提下，新增统一 `~/.config/<app-id>` 配置目录与 Secure Config。消费者应同时固定 Go Module 与 reusable workflow 版本。
 
 ## 已完成的工作
 
@@ -18,6 +18,8 @@
 | 系统集成 | 三平台登录自启、Wails 单实例、窗口显示／隐藏、关闭策略 |
 | UI 基础 | token、基础组件、导航样式与 ui.Mount 资源挂载 |
 | 图标 | 跨平台 desktopkit icon：已有图片 normalize、Terminal / Monogram 确定性生成、PNG 原子写入与边界保护 |
+| 配置路径 | 跨平台统一 XDG / `~/.config/<app-id>` 路径 API，不自动迁移旧消费者 |
+| Secure Config | 系统凭据库托管随机主密钥；AES-256-GCM 加密 Secret/JSON，无明文降级 |
 | 构建工程 | Windows／Linux／macOS 并行 reusable workflow、wrapper、SHA256、可选 Release |
 | 本轮 Runtime 修复 | macOS 主循环整合、托盘就绪／故障恢复、窗口并发保护、业务动作串行化 |
 | 本轮接口与边界 | BeforeClose／SecondInstance／TrayError／AutoStartProvider，Linux quoting、UI FS、图标限制、Release 产物范围 |

@@ -3,17 +3,19 @@ module github.com/wanstu/wails-desktop-kit
 go 1.26
 
 require (
+	github.com/godbus/dbus/v5 v5.2.2
 	github.com/gogpu/systray v0.2.8
 	github.com/wailsapp/wails/v2 v2.15.0
+	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/sys v0.47.0
 )
 
 require (
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
+	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-webgpu/goffi v0.6.3 // indirect
-	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
