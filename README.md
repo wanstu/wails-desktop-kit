@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.7.0
+## 安装 v0.7.1
 
-本文对应 **v0.7.0**。Linux 托盘默认改为常驻：主窗口关闭后隐藏到托盘；StatusNotifierItem 的主激活与菜单动作分离，左键恢复窗口、右键打开菜单。`desktopkit icon generate` 默认输出同步提升为 256×256。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.7.1**。Linux 托盘默认改为常驻：主窗口关闭后隐藏到托盘；StatusNotifierItem 的主激活与菜单动作分离，左键恢复窗口、右键打开菜单。`desktopkit icon generate` 默认输出同步提升为 256×256。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.7.0
+go get github.com/wanstu/wails-desktop-kit@v0.7.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.7.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.7.1` | Linux tray 修复改为可传递的直接模块依赖，消费者无需 replace 即可获得左键恢复窗口行为 |
 | `v0.7.0` | Linux 默认关闭到托盘；左键恢复窗口、右键菜单；`icon generate` 默认 256×256 |
 | `v0.6.1` | Packaging Pipeline 增加 Linux CI 真实包格式验收：dpkg-deb / tar / SHA256 全链路验证 |
 | `v0.6.0` | Packaging Pipeline 支持 raw / deb / tar.gz、统一 SHA256、Debian 桌面元数据与通用 post-package hook；包含 v0.5.2 的 Debian 换行修复 |
