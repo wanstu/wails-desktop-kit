@@ -1,0 +1,26 @@
+:root[data-dk-theme-pack="forest"] {
+  --dk-primary: #168a57;
+  --dk-primary-hover: #107047;
+  --dk-focus-ring: rgba(22, 138, 87, .18);
+  --dk-nav-active-bg: rgba(22, 138, 87, .09);
+  --dk-nav-active-border: rgba(22, 138, 87, .22);
+  --dk-nav-active-text: #166534;
+  --dk-nav-active-accent: #168a57;
+  --dk-success: #15803d;
+  --dk-shadow-panel: 0 10px 28px rgba(20, 83, 45, .07);
+}
+:root[data-dk-theme="dark"][data-dk-theme-pack="forest"] {
+  --dk-bg-app: #0b1511;
+  --dk-bg-elevated: #111e18;
+  --dk-bg-subtle: #17271f;
+  --dk-bg-muted: #1d3127;
+  --dk-primary: #4ade80;
+  --dk-primary-hover: #86efac;
+  --dk-focus-ring: rgba(74, 222, 128, .24);
+  --dk-nav-active-bg: rgba(74, 222, 128, .12);
+  --dk-nav-active-border: rgba(74, 222, 128, .27);
+  --dk-nav-active-text: #dcfce7;
+  --dk-nav-active-accent: #4ade80;
+  --dk-success: #86efac;
+  --dk-shadow-panel: 0 12px 32px rgba(3, 13, 8, .30);
+}

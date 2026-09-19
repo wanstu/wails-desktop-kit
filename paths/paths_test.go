@@ -75,3 +75,31 @@ func TestEnsureConfigDir(t *testing.T) {
 		t.Fatalf("%s is not a directory", dir)
 	}
 }
+
+func TestCacheRootUsesXDGCacheHome(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "cache")
+	t.Setenv("XDG_CACHE_HOME", root)
+	got, err := CacheRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != filepath.Clean(root) {
+		t.Fatalf("got %q want %q", got, filepath.Clean(root))
+	}
+}
+
+func TestEnsureCacheDir(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "cache")
+	t.Setenv("XDG_CACHE_HOME", root)
+	dir, err := EnsureCacheDir("wails-desktop-kit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(root, "wails-desktop-kit")
+	if dir != want {
+		t.Fatalf("got %q want %q", dir, want)
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		t.Fatalf("cache dir invalid: info=%v err=%v", info, err)
+	}
+}

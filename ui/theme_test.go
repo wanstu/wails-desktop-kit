@@ -44,6 +44,10 @@ func TestThemeScriptSupportsExplicitModesWithoutPersistence(t *testing.T) {
 		`setPack`,
 		`getPack`,
 		`clearPack`,
+		`applyPack`,
+		`loadCatalog`,
+		`refreshCatalog`,
+		`getCatalog`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Fatalf("theme.js missing %q", want)

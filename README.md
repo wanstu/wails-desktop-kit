@@ -2,20 +2,20 @@
 
 面向 **Go + Wails v2** 桌面应用的公共基础库，集中维护窗口、托盘、登录自启、单实例、CSS 基础样式、图标处理和三平台 CI。业务项目继续拥有配置、进程管理和页面逻辑。
 
-首个实际消费者是 [FRP Client Manager](https://github.com/wanstu/frp-client-manager)。IME Lock、AI Dev Manager、CodexPro+ 尚未接入。
+FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.4.0
+## 安装 v0.5.0
 
-本文对应 **v0.4.0**。在 v0.3.x Runtime、Theme Pack 与图标能力基础上，新增统一配置目录 `~/.config/<app-id>` 与 Secure Config：敏感配置使用 AES-256-GCM 加密落盘，随机主密钥保存在系统安全凭据库，不随配置目录一起存储。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.5.0**。在 v0.4.x 配置与 Secure Config 基础上，新增 Runtime Theme：Kit 固定内置 4 个离线 fallback Theme Pack，并可从独立 Theme 仓库运行时同步完整主题集、校验 SHA-256、保存 last-known-good 完整快照。Theme 更新不再要求消费者重新构建应用。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.4.0
+go get github.com/wanstu/wails-desktop-kit@v0.5.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.4.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.5.0` | Runtime Theme：4 个内置 fallback、远程 manifest、完整快照缓存、SHA-256 校验；Theme 更新无需重建消费者 |
 | `v0.4.0` | 统一 `~/.config/<app-id>` 配置目录；新增 Secure Config，系统凭据库托管主密钥 + AES-256-GCM 密文 |
 | `v0.3.1` | 新增确定性 Kit 家族图标生成器：Terminal / Monogram；保留原 normalize CLI |
 | `v0.3.0` | 新增 Theme Pack 协议，与 light / dark / system 明暗模式正交；可选主题拆到独立模块 |
@@ -46,6 +47,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | 新建最小应用，或替换已有 Wails 入口 | [快速接入](docs/getting-started.md) |
 | 配置窗口、托盘、生命周期、单实例、自启动 | [Runtime 使用指南](docs/runtime.md) |
 | 挂载 CSS、选择组件类、统一图标 | [UI 与图标](docs/ui-and-icons.md) |
+| 运行时下载、缓存、刷新 Theme Pack | [Runtime Theme](docs/runtime-theme.md) |
 | 统一配置目录、保存密码／Token／私钥口令 | [配置目录与安全配置](docs/config-and-secrets.md) |
 | 本地构建、三平台 CI、权限和 Release | [构建与发布](docs/build-release.md) |
 | 判断哪些代码应放入 Kit | [架构边界](docs/architecture.md) |
@@ -60,7 +62,8 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | --- | --- | --- |
 | 根包 `desktopkit` | Wails 生命周期、单实例、窗口控制、托盘菜单与失败恢复 | 应用 ID、标题、资源、绑定对象、业务回调 |
 | `autostart` | Windows Run、Linux desktop entry、macOS LaunchAgent | 稳定 ID、启动参数、启用／禁用入口 |
-| `ui` | token、布局、表单、按钮、状态、对话框和导航 CSS | 页面结构、交互、数据和无障碍行为 |
+| `ui` | token、布局、表单、按钮、状态、对话框、导航 CSS 与 Theme Runtime JS | 页面结构、交互、数据和无障碍行为 |
+| `theme` | 远程 manifest、Theme CSS 下载、SHA-256 校验、全局缓存与本地 AssetServer | 保存用户的 theme mode / pack 选择 |
 | `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`，默认 `~/.config/<app>` | 稳定 App ID |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON | Secret 的逻辑 key 与业务生命周期 |
@@ -81,6 +84,6 @@ Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。
 
 ## 当前验收状态
 
-Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.4.0 在 v0.3.x 基础上增加统一配置路径与 Secure Config；Runtime、主题、图标与已有应用入口保持兼容。
+Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.5.0 在 v0.4.x 基础上增加 Runtime Theme 与完整离线快照；零值 ThemeConfig 仍保持关闭，因此已有应用升级 Kit 不会自动发起主题网络请求。
 
 桌面菜单操作、真实登录自启、宿主丢失与消费者 tag Release 的验收仍待完成。详见 [进度与待办](docs/status.md)。

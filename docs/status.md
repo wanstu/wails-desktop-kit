@@ -8,7 +8,7 @@
 
 第一阶段公共抽象已经可用，FRP 已实际复用 Runtime／tray／autostart／CI。Review 后的关键修复已提交推送，Kit 和 FRP 的三平台 CI 全绿。
 
-当前发布目标为 **Kit v0.4.0**。v0.3.x 已提供 Theme Pack 协议与产品家族图标生成器；v0.4.0 在保持 Runtime、主题和图标 API 兼容的前提下，新增统一 `~/.config/<app-id>` 配置目录与 Secure Config。消费者应同时固定 Go Module 与 reusable workflow 版本。
+当前发布目标为 **Kit v0.5.0**。v0.5.0 在 v0.4.x 配置与 Secure Config 基础上新增 Runtime Theme：4 个内置 fallback Theme、远程 manifest、SHA-256 校验和 last-known-good 完整快照。消费者启用 Runtime Theme 后，Theme 内容更新不再要求重新构建应用。
 
 ## 已完成的工作
 
@@ -16,10 +16,11 @@
 | --- | --- |
 | 公共库基础 | 公开 Go Module、声明式 Config、Controller、TrayConfig、Hooks |
 | 系统集成 | 三平台登录自启、Wails 单实例、窗口显示／隐藏、关闭策略 |
-| UI 基础 | token、基础组件、导航样式与 ui.Mount 资源挂载 |
+| UI 基础 | token、基础组件、导航样式、ui.Mount 与 Runtime Theme JS |
 | 图标 | 跨平台 desktopkit icon：已有图片 normalize、Terminal / Monogram 确定性生成、PNG 原子写入与边界保护 |
 | 配置路径 | 跨平台统一 XDG / `~/.config/<app-id>` 路径 API，不自动迁移旧消费者 |
 | Secure Config | 系统凭据库托管随机主密钥；AES-256-GCM 加密 Secret/JSON，无明文降级 |
+| Runtime Theme | 4 个内置 fallback；远程主题整包同步、SHA-256 校验、共享缓存、完整快照与离线恢复 |
 | 构建工程 | Windows／Linux／macOS 并行 reusable workflow、wrapper、SHA256、可选 Release |
 | 本轮 Runtime 修复 | macOS 主循环整合、托盘就绪／故障恢复、窗口并发保护、业务动作串行化 |
 | 本轮接口与边界 | BeforeClose／SecondInstance／TrayError／AutoStartProvider，Linux quoting、UI FS、图标限制、Release 产物范围 |
@@ -61,7 +62,7 @@ PR：
 | --- | --- | --- |
 | FRP UI | 未迁移 | 逐页使用 Kit token／组件，检查控件状态与布局 |
 | FRP icon script | 待迁移 | 改用 `desktopkit icon generate --symbol monogram --text F`，核对应用及托盘图标 |
-| IME Lock | 未接入 | 验证静默自启、重复自启不弹窗、平台专属逻辑边界 |
+| IME Lock | Runtime Theme 已接入 | 继续验证静默自启、重复自启不弹窗、平台专属逻辑边界 |
 | AI Dev Manager | 未接入 | 验证后台服务退出选择、设置通知及复杂构建 wrapper |
 | CodexPro+ | 未接入 | 验证第二次启动行为、额外 core build 和资源流程 |
 | StatusNotifier host 探测 | 未实现 | 区分注册与可见宿主；宿主消失后的恢复与桌面兼容性 |
