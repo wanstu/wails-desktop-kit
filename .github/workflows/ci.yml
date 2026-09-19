@@ -50,6 +50,28 @@ jobs:
       - name: Test
         run: go test -race -count=1 ./...
 
+      - name: Debian control metadata smoke
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          deb_root="$(mktemp -d)"
+          trap 'rm -rf "$deb_root"' EXIT
+          install -Dm755 /bin/true "$deb_root/usr/bin/desktopkit-deb-smoke"
+          mkdir -p "$deb_root/DEBIAN"
+          {
+            echo "Package: desktopkit-deb-smoke"
+            echo "Version: 0.0.0~ci"
+            echo "Section: utils"
+            echo "Priority: optional"
+            echo "Architecture: amd64"
+            echo "Maintainer: desktopkit-ci"
+            echo "Depends: libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0"
+            printf 'Description: %s\n' "Desktop Kit Debian packaging smoke"
+          } > "$deb_root/DEBIAN/control"
+          dpkg-deb --build --root-owner-group "$deb_root" /tmp/desktopkit-deb-smoke.deb
+          dpkg-deb --info /tmp/desktopkit-deb-smoke.deb >/dev/null
+
       - name: macOS Wails and tray lifecycle smoke
         if: runner.os == 'macOS'
         # Match the framework linked by Wails' macOS build command.

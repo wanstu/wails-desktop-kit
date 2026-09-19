@@ -212,7 +212,7 @@ jobs:
               echo "Architecture: amd64"
               echo "Maintainer: ${GITHUB_REPOSITORY_OWNER}"
               echo "Depends: libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0"
-              printf 'Description: %s\\n' "$DEB_DESCRIPTION"
+              printf 'Description: %s\n' "$DEB_DESCRIPTION"
             } > "$deb_root/DEBIAN/control"
 
             deb_target="$asset_base-linux-amd64.deb"
