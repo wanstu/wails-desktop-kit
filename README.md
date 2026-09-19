@@ -4,18 +4,18 @@
 
 首个实际消费者是 [FRP Client Manager](https://github.com/wanstu/frp-client-manager)。IME Lock、AI Dev Manager、CodexPro+ 尚未接入。
 
-## 安装 v0.2.2
+## 安装 v0.3.0
 
-本文对应 **v0.2.2**。该版本基于 v0.2.1 的 Release 产物命名修复，新增完整的 token 驱动暗色主题契约；完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.3.0**。该版本在 v0.2.2 的 token 驱动 light / dark / system 主题基础上，新增独立的 Theme Pack 协议：`data-dk-theme-pack` 与 `setPack/getPack/clearPack`。可选通用主题包由独立模块 `wails-desktop-kit-theme` 提供，Kit 本体继续只维护协议和默认主题；完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.2.2
+go get github.com/wanstu/wails-desktop-kit@v0.3.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.2.2
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.3.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.3.0` | 新增 Theme Pack 协议，与 light / dark / system 明暗模式正交；可选主题拆到独立模块 |
 | `v0.2.2` | token 驱动的完整暗色主题契约；公共组件不再写死浅色颜色值 |
 | `v0.2.1` | 修复 tag Release 产物文件名，产物自动包含版本号 |
 | `v0.2.0` | 生命周期加固、跨平台边界修复和中文接入文档 |
@@ -75,6 +76,6 @@ Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。
 
 ## 当前验收状态
 
-Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.2.2 在此基础上增加 UI 主题 token 契约，并保持 Runtime API 不变。
+Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.3.0 在此基础上增加 Theme Pack 协议，并保持 Runtime API 与原有 light / dark / system 调用方式兼容。
 
 桌面菜单操作、真实登录自启、宿主丢失与消费者 tag Release 的验收仍待完成。详见 [进度与待办](docs/status.md)。
