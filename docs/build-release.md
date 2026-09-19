@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.6.0。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.6.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -30,7 +30,7 @@ v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程�
 Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.6.0
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.6.1
 
 desktopkit package linux `
   --input .\build\bin\desktop-demo `
@@ -68,7 +68,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -94,7 +94,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -120,7 +120,7 @@ jobs:
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.6.0` | Packaging helper 版本 |
+| `desktopkit-cli-version` | `v0.6.1` | Packaging helper 版本 |
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
 | `build-command-windows` | 空 | Windows 产品 wrapper |
@@ -217,4 +217,4 @@ Release job 不再写死 package 格式，而是验证下载到的全部 `.sha25
 | macOS 裸 go run 缺少 UTType 符号 | 优先用 Wails 构建器；它会补齐 UniformTypeIdentifiers 框架链接 |
 | wrapper 报错但 CI 看似成功 | 检查 PowerShell 的 LASTEXITCODE 是否正确退出 |
 
-本轮修复已经通过普通消费者 CI，新的消费者 tag Release 路径仍待真实发布验收。准确状态见 [进度清单](status.md)。
+Packaging Pipeline 已通过 Kit 自身 Linux `dpkg-deb` / `tar` / SHA256 验收，并已由 Know Me v0.1.0 的真实 tag Release 验证 raw / deb / tar.gz / macOS app.zip / Windows exe 汇总发布。准确状态见 [进度清单](status.md)。

@@ -28,7 +28,7 @@ on:
       desktopkit-cli-version:
         description: "Desktop Kit helper version used for package staging."
         required: false
-        default: "v0.6.0"
+        default: "v0.6.1"
         type: string
       test-command:
         required: false
