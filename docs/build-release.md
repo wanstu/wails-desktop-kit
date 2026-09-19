@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.5.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.5.2。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.2
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -68,7 +68,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.2
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -156,4 +156,4 @@ SHA256 用于完整性校验，不是代码签名。开启 `linux-deb` 时 `.deb
 | macOS 裸 go run 缺少 UTType 符号 | 优先用 Wails 构建器；它会补齐 UniformTypeIdentifiers 框架链接 |
 | wrapper 报错但 CI 看似成功 | 检查 PowerShell 的 LASTEXITCODE 是否正确退出 |
 
-本轮修复已经通过普通消费者 CI，新的消费者 tag Release 路径仍待真实发布验收。准确状态见 [进度清单](status.md)。
+v0.5.2 起，Kit 自身 Linux CI 会额外构建最小 Debian 包，直接校验 control metadata；消费者仍应在启用 `linux-deb` 后通过自己的 CI / tag Release 做最终产物验收。准确状态见 [进度清单](status.md)。
