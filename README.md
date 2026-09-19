@@ -4,18 +4,18 @@
 
 首个实际消费者是 [FRP Client Manager](https://github.com/wanstu/frp-client-manager)。IME Lock、AI Dev Manager、CodexPro+ 尚未接入。
 
-## 安装 v0.3.1
+## 安装 v0.4.0
 
-本文对应 **v0.3.1**。在 v0.3.0 Theme Pack 协议基础上，新增无字体依赖的产品家族图标生成器：应用可直接生成统一的圆角底色 + `>_` Terminal 或单字符 Monogram 图标；原有图片规范化 CLI 保持兼容。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.4.0**。在 v0.3.x Runtime、Theme Pack 与图标能力基础上，新增统一配置目录 `~/.config/<app-id>` 与 Secure Config：敏感配置使用 AES-256-GCM 加密落盘，随机主密钥保存在系统安全凭据库，不随配置目录一起存储。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.3.1
+go get github.com/wanstu/wails-desktop-kit@v0.4.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.3.1
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.4.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.4.0` | 统一 `~/.config/<app-id>` 配置目录；新增 Secure Config，系统凭据库托管主密钥 + AES-256-GCM 密文 |
 | `v0.3.1` | 新增确定性 Kit 家族图标生成器：Terminal / Monogram；保留原 normalize CLI |
 | `v0.3.0` | 新增 Theme Pack 协议，与 light / dark / system 明暗模式正交；可选主题拆到独立模块 |
 | `v0.2.2` | token 驱动的完整暗色主题契约；公共组件不再写死浅色颜色值 |
@@ -45,6 +46,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | 新建最小应用，或替换已有 Wails 入口 | [快速接入](docs/getting-started.md) |
 | 配置窗口、托盘、生命周期、单实例、自启动 | [Runtime 使用指南](docs/runtime.md) |
 | 挂载 CSS、选择组件类、统一图标 | [UI 与图标](docs/ui-and-icons.md) |
+| 统一配置目录、保存密码／Token／私钥口令 | [配置目录与安全配置](docs/config-and-secrets.md) |
 | 本地构建、三平台 CI、权限和 Release | [构建与发布](docs/build-release.md) |
 | 判断哪些代码应放入 Kit | [架构边界](docs/architecture.md) |
 | 对照首个消费者的实际接入 | [FRP 迁移记录](docs/frp-migration.md) |
@@ -60,6 +62,8 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `autostart` | Windows Run、Linux desktop entry、macOS LaunchAgent | 稳定 ID、启动参数、启用／禁用入口 |
 | `ui` | token、布局、表单、按钮、状态、对话框和导航 CSS | 页面结构、交互、数据和无障碍行为 |
 | `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
+| `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`，默认 `~/.config/<app>` | 稳定 App ID |
+| `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON | Secret 的逻辑 key 与业务生命周期 |
 | reusable workflow | 三平台并行构建、产物归档、SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
@@ -77,6 +81,6 @@ Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。
 
 ## 当前验收状态
 
-Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.3.1 在 v0.3.0 Theme Pack 协议基础上增加图标生成能力；Runtime、主题与原有 icon normalize API 保持兼容。
+Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.4.0 在 v0.3.x 基础上增加统一配置路径与 Secure Config；Runtime、主题、图标与已有应用入口保持兼容。
 
 桌面菜单操作、真实登录自启、宿主丢失与消费者 tag Release 的验收仍待完成。详见 [进度与待办](docs/status.md)。

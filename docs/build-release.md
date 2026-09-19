@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.3.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.4.0。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.3.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.4.0
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -68,7 +68,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.3.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.4.0
     with:
       app-name: desktop-demo
       desktop-dir: .

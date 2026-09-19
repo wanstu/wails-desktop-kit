@@ -136,7 +136,7 @@ Kit 只维护主题协议和默认 light/dark token，不内置 Midnight、Graph
 v0.3.1 起，`desktopkit icon` 同时提供 **generate**（确定性生成产品家族图标）和 **normalize**（规范化已有图片）两条路径。原有 `desktopkit icon --input ...` 用法保持兼容。
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.3.1
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.4.0
 
 # SSH / Terminal 家族图标
 desktopkit icon generate --output assets/appicon.png --symbol terminal --background "#2463EB"
