@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.5.2
+## 安装 v0.6.0
 
-本文对应 **v0.5.2**。修复 v0.5.1 Debian `.deb` control 文件 Description 缺少最终换行、导致 `dpkg-deb` 拒绝打包的问题；Runtime Theme 与其他消费者 API 不变。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.6.0**。在 v0.5.x Runtime Theme / `.deb` 基础上新增可扩展 Packaging Pipeline：Kit CLI 可统一生成 Linux `raw / .deb / .tar.gz` 与 SHA256，reusable workflow 支持通用 post-package hook，后续增加 AppImage、DMG、MSI 等格式时不需要重写 Release 汇总逻辑。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.5.2
+go get github.com/wanstu/wails-desktop-kit@v0.6.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.2
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,7 +30,8 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
-| `v0.5.2` | 修复 Debian control Description 最终换行，`.deb` consumer CI 可正常打包 |
+| `v0.6.0` | Packaging Pipeline 支持 raw / deb / tar.gz、统一 SHA256、Debian 桌面元数据与通用 post-package hook；包含 v0.5.2 的 Debian 换行修复 |
+| `v0.5.2` | 热修 v0.5.1 Debian control Description 最终换行，恢复 `.deb` consumer CI |
 | `v0.5.1` | reusable workflow 新增可选 Linux `.deb` 产物与 SHA256 校验；默认关闭 |
 | `v0.5.0` | Runtime Theme：4 个内置 fallback、远程 manifest、完整快照缓存、SHA-256 校验；Theme 更新无需重建消费者 |
 | `v0.4.0` | 统一 `~/.config/<app-id>` 配置目录；新增 Secure Config，系统凭据库托管主密钥 + AES-256-GCM 密文 |
@@ -69,7 +70,8 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`，默认 `~/.config/<app>` | 稳定 App ID |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON | Secret 的逻辑 key 与业务生命周期 |
-| reusable workflow | 三平台并行构建、产物归档、SHA256、可选 Linux `.deb`、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
+| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz、桌面文件与图标安装、统一 SHA256；格式化 builder 结构便于后续 AppImage 等扩展 | 产品元数据、可选复杂格式 hook |
+| reusable workflow | 三平台并行构建、Packaging Pipeline、通用 post-package hook、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
 
