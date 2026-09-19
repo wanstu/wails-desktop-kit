@@ -171,6 +171,7 @@ jobs:
         env:
           APP_NAME: ${{ inputs.app-name }}
           ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          DEB_DESCRIPTION: ${{ inputs.linux-deb-description }}
         run: |
           set -euo pipefail
           mkdir -p dist
@@ -203,16 +204,16 @@ jobs:
             trap 'rm -rf "$deb_root"' EXIT
             install -Dm755 "dist/$target" "$deb_root/usr/bin/$APP_NAME"
             mkdir -p "$deb_root/DEBIAN"
-            cat > "$deb_root/DEBIAN/control" <<EOF
-Package: $package_name
-Version: $package_version
-Section: utils
-Priority: optional
-Architecture: amd64
-Maintainer: ${GITHUB_REPOSITORY_OWNER}
-Depends: libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0
-Description: ${{ inputs.linux-deb-description }}
-EOF
+            {
+              echo "Package: $package_name"
+              echo "Version: $package_version"
+              echo "Section: utils"
+              echo "Priority: optional"
+              echo "Architecture: amd64"
+              echo "Maintainer: ${GITHUB_REPOSITORY_OWNER}"
+              echo "Depends: libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0"
+              printf 'Description: %s\\n' "$DEB_DESCRIPTION"
+            } > "$deb_root/DEBIAN/control"
 
             deb_target="$asset_base-linux-amd64.deb"
             dpkg-deb --build --root-owner-group "$deb_root" "dist/$deb_target"
