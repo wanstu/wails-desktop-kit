@@ -16,12 +16,31 @@
 
   --dk-primary: #2563eb;
   --dk-primary-hover: #1d4ed8;
+  --dk-primary-contrast: #ffffff;
+  --dk-focus-ring: rgba(37, 99, 235, .16);
+
   --dk-success: #16885f;
   --dk-success-bg: #e7f7ef;
   --dk-warning: #a85a1f;
   --dk-warning-bg: #fff2e2;
   --dk-danger: #b42318;
   --dk-danger-bg: #fff0f0;
+  --dk-danger-border: #f3c4c0;
+
+  --dk-control-track: #cbd5e1;
+  --dk-control-thumb: #ffffff;
+  --dk-control-thumb-shadow: 0 1px 5px rgba(0, 0, 0, .16);
+
+  --dk-nav-text: #4b5563;
+  --dk-nav-active-bg: #f3f4f6;
+  --dk-nav-active-border: #d5dbe4;
+  --dk-nav-active-text: #111827;
+  --dk-nav-active-accent: #111827;
+  --dk-tab-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+
+  --dk-backdrop: rgba(15, 23, 42, .35);
+  --dk-log-bg: #111827;
+  --dk-log-text: #d6e1ef;
 
   --dk-radius-xs: 6px;
   --dk-radius-sm: 9px;
@@ -41,4 +60,50 @@
 
   --dk-sidebar-width: 224px;
   --dk-transition: .16s ease;
+}
+
+:root[data-dk-theme="dark"] {
+  color-scheme: dark;
+
+  --dk-bg-app: #0f1319;
+  --dk-bg-elevated: #151b23;
+  --dk-bg-subtle: #1a222d;
+  --dk-bg-muted: #202a37;
+
+  --dk-text: #e8edf4;
+  --dk-text-secondary: #a9b4c4;
+  --dk-text-muted: #778599;
+  --dk-border: #2b3746;
+  --dk-border-subtle: #222c38;
+
+  --dk-primary: #738dff;
+  --dk-primary-hover: #8fa3ff;
+  --dk-primary-contrast: #ffffff;
+  --dk-focus-ring: rgba(115, 141, 255, .24);
+
+  --dk-success: #6bd9ae;
+  --dk-success-bg: rgba(79, 209, 161, .12);
+  --dk-warning: #e8bd6d;
+  --dk-warning-bg: rgba(230, 187, 99, .12);
+  --dk-danger: #ff8e98;
+  --dk-danger-bg: rgba(255, 127, 137, .12);
+  --dk-danger-border: rgba(255, 127, 137, .34);
+
+  --dk-control-track: #344154;
+  --dk-control-thumb: #f3f6fb;
+  --dk-control-thumb-shadow: 0 1px 5px rgba(0, 0, 0, .36);
+
+  --dk-nav-text: #9aa7b8;
+  --dk-nav-active-bg: rgba(115, 141, 255, .12);
+  --dk-nav-active-border: rgba(115, 141, 255, .28);
+  --dk-nav-active-text: #dce4ff;
+  --dk-nav-active-accent: #738dff;
+  --dk-tab-shadow: 0 1px 3px rgba(0, 0, 0, .28);
+
+  --dk-backdrop: rgba(3, 6, 10, .62);
+  --dk-log-bg: #090d12;
+  --dk-log-text: #c4cfdd;
+
+  --dk-shadow-panel: 0 8px 24px rgba(0, 0, 0, .18);
+  --dk-shadow-dialog: 0 24px 80px rgba(0, 0, 0, .45);
 }

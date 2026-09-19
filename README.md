@@ -4,18 +4,18 @@
 
 首个实际消费者是 [FRP Client Manager](https://github.com/wanstu/frp-client-manager)。IME Lock、AI Dev Manager、CodexPro+ 尚未接入。
 
-## 安装 v0.2.0
+## 安装 v0.2.2
 
-本文对应 **v0.2.0**，包含本轮 Runtime 与跨平台边界修复。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.2.2**。该版本基于 v0.2.1 的 Release 产物命名修复，新增完整的 token 驱动暗色主题契约；完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.2.0
+go get github.com/wanstu/wails-desktop-kit@v0.2.2
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.2.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.2.2
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,7 +30,9 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
-| `v0.2.0` | 本轮发布版本，包含生命周期加固、边界修复和中文接入文档 |
+| `v0.2.2` | token 驱动的完整暗色主题契约；公共组件不再写死浅色颜色值 |
+| `v0.2.1` | 修复 tag Release 产物文件名，产物自动包含版本号 |
+| `v0.2.0` | 生命周期加固、跨平台边界修复和中文接入文档 |
 | `v0.1.2` | 上一稳定基线，不包含本轮修复；[查看对应文档](https://github.com/wanstu/wails-desktop-kit/tree/v0.1.2) |
 | `b314506`／对应伪版本 | 发布前 FRP 的验证版本；正式接入改用 v0.2.0 |
 
@@ -73,6 +75,6 @@ Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。
 
 ## 当前验收状态
 
-Kit 与 FRP 修复分支的 Windows／Linux／macOS CI 已通过，Windows 和 macOS 的真实 WebView＋托盘启动退出检查已通过。修复及文档纳入 v0.2.0 发布，FRP 正在切换正式版本依赖。
+Kit 的 Runtime 基线已经通过 Windows／Linux／macOS CI 与 Windows/macOS 真实 WebView＋托盘启动退出检查。v0.2.2 在此基础上增加 UI 主题 token 契约，并保持 Runtime API 不变。
 
 桌面菜单操作、真实登录自启、宿主丢失与消费者 tag Release 的验收仍待完成。详见 [进度与待办](docs/status.md)。

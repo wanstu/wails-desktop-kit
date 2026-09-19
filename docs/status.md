@@ -8,7 +8,7 @@
 
 第一阶段公共抽象已经可用，FRP 已实际复用 Runtime／tray／autostart／CI。Review 后的关键修复已提交推送，Kit 和 FRP 的三平台 CI 全绿。
 
-本轮发布版本为 **Kit v0.2.0**，FRP 发布目标为 **v1.3**。Kit 文档和示例已切换正式版本引用；是否已发布及消费者 Release 结果以对应仓库 Releases／Actions 为准。安装旧 v0.1.2 不会获得本轮修复。
+当前发布目标为 **Kit v0.2.2**。v0.2.1 已完成 tag Release 产物命名修复；v0.2.2 在保持 Runtime API 不变的前提下补齐 UI 暗色主题 token 契约。消费者应同时固定 Go Module 与 reusable workflow 版本。
 
 ## 已完成的工作
 

@@ -55,7 +55,7 @@
 .dk-button-primary {
   border-color: var(--dk-primary);
   background: var(--dk-primary);
-  color: #fff;
+  color: var(--dk-primary-contrast);
 }
 
 .dk-button-primary:hover {
@@ -69,7 +69,7 @@
 }
 
 .dk-button-danger {
-  border-color: #f3c4c0;
+  border-color: var(--dk-danger-border);
   background: var(--dk-danger-bg);
   color: var(--dk-danger);
 }
@@ -107,7 +107,7 @@
 }
 
 .dk-message.is-error {
-  border-color: #f5c9c5;
+  border-color: var(--dk-danger-border);
   background: var(--dk-danger-bg);
   color: var(--dk-danger);
 }
@@ -133,7 +133,7 @@
   flex: 0 0 auto;
   border: 0;
   border-radius: 999px;
-  background: #cbd5e1;
+  background: var(--dk-control-track);
   position: relative;
   cursor: pointer;
   transition: background var(--dk-transition);
@@ -147,8 +147,8 @@
   top: 3px;
   left: 3px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, .16);
+  background: var(--dk-control-thumb);
+  box-shadow: var(--dk-control-thumb-shadow);
   transition: transform var(--dk-transition);
 }
 
@@ -188,8 +188,8 @@
 .dk-field input:focus,
 .dk-field select:focus,
 .dk-field textarea:focus {
-  border-color: #8bb0f8;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, .08);
+  border-color: var(--dk-primary);
+  box-shadow: 0 0 0 3px var(--dk-focus-ring);
 }
 
 .dk-empty-state {
@@ -213,7 +213,7 @@
 }
 
 .dk-dialog::backdrop {
-  background: rgba(15, 23, 42, .35);
+  background: var(--dk-backdrop);
 }
 
 .dk-log-output {
@@ -221,8 +221,8 @@
   margin: 0;
   border-radius: var(--dk-radius-sm);
   padding: 12px 14px;
-  background: #111827;
-  color: #d6e1ef;
+  background: var(--dk-log-bg);
+  color: var(--dk-log-text);
   font: 12px/1.55 "Cascadia Mono", Consolas, monospace;
   white-space: pre-wrap;
   word-break: break-word;
