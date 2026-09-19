@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.5.2。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.6.0。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -23,6 +23,32 @@ sudo apt-get install -y build-essential libgtk-3-dev libwebkit2gtk-4.1-dev
 
 实际运行还需要图形会话；容器中的编译通过不代表托盘宿主存在。macOS 使用 Wails 构建器处理框架链接和 .app 打包，不能把裸 `go run` 的结果视为标准打包验收。
 
+## Packaging Pipeline
+
+v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程序，Desktop Kit 的 Packaging Pipeline 负责把程序整理成 Release 资产。
+
+Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
+
+~~~powershell
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.6.0
+
+desktopkit package linux `
+  --input .\build\bin\desktop-demo `
+  --dist .\dist `
+  --app-name desktop-demo `
+  --asset-base desktop-demo-v1.2.0 `
+  --package-version 1.2.0 `
+  --formats raw,deb,tar.gz `
+  --description "Desktop Demo" `
+  --maintainer "wanstu" `
+  --desktop-file .\packaging\desktop-demo.desktop `
+  --icon .\build\appicon.png
+~~~
+
+`.deb` 可把程序安装到 `/usr/bin/<app-name>`，并在提供资源时同时安装 `.desktop` 与 hicolor 图标。`.tar.gz` 则生成独立版本目录，包含二进制和可选桌面资源。
+
+Packaging API 以 format builder 为边界。以后增加 AppImage 等格式时可以新增 builder，而不需要改变产品的 Wails 构建逻辑。
+
 ## CI caller
 
 保存为业务仓库 `.github/workflows/ci.yml`。下面假设应用的 `wails.json` 在仓库根目录，`outputfilename` 为 `desktop-demo`：
@@ -42,7 +68,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.2
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.0
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -68,10 +94,14 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.5.2
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.6.0
     with:
       app-name: desktop-demo
       desktop-dir: .
+      linux-package-formats: raw,deb,tar.gz
+      linux-package-description: Desktop Demo
+      linux-desktop-file: packaging/desktop-demo.desktop
+      linux-icon-file: build/appicon.png
       publish-release: true
 ~~~
 
@@ -90,15 +120,40 @@ jobs:
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
+| `desktopkit-cli-version` | `v0.6.0` | Packaging helper 版本 |
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
-| `build-command-windows` | 空 | 非空时使用 Windows 产品 wrapper |
-| `build-command-unix` | 空 | 非空时使用 Linux/macOS 产品 wrapper |
-| `linux-deb` | `false` | Linux amd64 构建后额外生成 Debian `.deb` 安装包 |
-| `linux-deb-description` | `Wails desktop application` | 写入 Debian control 的 Description |
+| `build-command-windows` | 空 | Windows 产品 wrapper |
+| `build-command-unix` | 空 | Linux/macOS 产品 wrapper |
+| `linux-package-formats` | `raw` | 逗号分隔：`raw,deb,tar.gz` |
+| `linux-package-name` | 空 | Debian 包名；空时由 app-name 推导 |
+| `linux-package-description` | `Wails desktop application` | Linux 包描述 |
+| `linux-package-maintainer` | 仓库 owner | Debian Maintainer |
+| `linux-deb-depends` | GTK3 + WebKitGTK 4.1 | Debian Depends |
+| `linux-deb-section` | `utils` | Debian Section |
+| `linux-deb-priority` | `optional` | Debian Priority |
+| `linux-desktop-file` | 空 | 可选 `.desktop` 文件 |
+| `linux-icon-file` | 空 | 可选图标文件 |
+| `post-package-command-windows` | 空 | 向 `dist/` 增加额外 Windows 产物 |
+| `post-package-command-linux` | 空 | 向 `dist/` 增加额外 Linux 产物，例如 AppImage |
+| `post-package-command-macos` | 空 | 向 `dist/` 增加额外 macOS 产物 |
+| `linux-deb` | `false` | 兼容旧 caller；true 等价于追加 `deb` |
+| `linux-deb-description` | 空 | 兼容旧 caller；非空时覆盖新 Description |
 | `publish-release` | `false` | 是否允许进入 tag Release 发布 |
 
-目前平台矩阵固定，不提供任意矩阵、额外架构或签名输入。`.deb` 仅针对现有 Linux amd64 产物，默认关闭，因此升级 workflow 不会让已有消费者突然增加安装包。
+`linux-deb` 与 `linux-deb-description` 进入兼容模式，新项目优先使用 `linux-package-formats` 与 `linux-package-description`。v0.5.2 已热修旧 `.deb` control 换行；升级到 v0.6.0 时，已经使用 `linux-deb: true` 的消费者不需要改 caller 参数，workflow 会自动转换为 `raw,deb`。平台矩阵当前仍固定为 Windows amd64、Linux amd64、macOS universal。
+
+### 更复杂格式的扩展点
+
+复杂打包不应该继续往 reusable workflow 里堆平台专用 shell。v0.6.0 提供两层扩展：内置 format builder 负责稳定格式；product post-package hook 负责尚未升为一等能力的复杂格式。
+
+例如 AppImage 可以先由产品脚本生成到 `dist/`：
+
+~~~yaml
+      post-package-command-linux: bash ./scripts/package-appimage.sh
+~~~
+
+hook 完成后 workflow 会扫描 `dist/`，为所有非 `.sha256` 文件生成 SHA256；Release job 也不再写死 `.deb` 或 `.tar.gz` 文件名，而是校验本次构建实际产生的全部 checksum。未来把 AppImage 升级成 Kit 内置 builder 时，不需要重构 Release 汇总阶段。
 
 ## 保留产品构建脚本
 
@@ -131,19 +186,25 @@ command 输入就是可执行脚本，只应来自可信仓库配置。不要把
 
 ## 产物与校验
 
-每个平台上传一个 artifact，保留 14 天。artifact 容器名保持稳定，便于 Release job 精确下载；**tag 构建时，容器内的发布文件会自动带 tag 版本号**：
+每个平台上传一个 artifact，保留 14 天。artifact 容器名稳定；**tag 构建时，文件名自动带 tag 版本号**：
 
-| artifact 名称 | 普通分支／PR 核心文件 | tag `v1.3` 的 Release 文件 |
-| --- | --- | --- |
-| `<app-name>-windows-amd64` | `<app-name>-windows-amd64.exe` | `<app-name>-v1.3-windows-amd64.exe` |
-| `<app-name>-linux-amd64` | `<app-name>-linux-amd64`；开启 `linux-deb` 时另有 `<app-name>-linux-amd64.deb` | `<app-name>-v1.3-linux-amd64`；开启时另有 `<app-name>-v1.3-linux-amd64.deb` |
-| `<app-name>-macos-universal` | `<app-name>-macos-universal.app.zip` | `<app-name>-v1.3-macos-universal.app.zip` |
+| artifact 名称 | 典型 Release 文件 |
+| --- | --- |
+| `<app-name>-windows-amd64` | `<app-name>-v1.3.0-windows-amd64.exe` |
+| `<app-name>-linux-amd64` | 由 `linux-package-formats` 决定 raw / deb / tar.gz |
+| `<app-name>-macos-universal` | `<app-name>-v1.3.0-macos-universal.app.zip` |
 
-对应的 `.sha256` 文件使用相同基础文件名，例如 `<app-name>-v1.3-windows-amd64.exe.sha256`，文件内容中的校验目标也会同步带版本号。
+例如 Linux 设置 `raw,deb,tar.gz` 后会得到：
 
-发布步骤只下载同一次 run 的这三个指定 artifact，确认带当前 tag 的核心产物存在且非空，再验证 SHA256。构建端仍会上传 `dist/*`，发布端仍会附加下载目录中的文件；不要把临时文件放进 dist，也不要让各平台额外文件使用相同名称。
+~~~text
+desktop-demo-v1.3.0-linux-amd64
+desktop-demo-v1.3.0-linux-amd64.deb
+desktop-demo-v1.3.0-linux-amd64.tar.gz
+~~~
 
-SHA256 用于完整性校验，不是代码签名。开启 `linux-deb` 时 `.deb` 也会生成独立 `.sha256`；包内将应用安装到 `/usr/bin/<app-name>`，并声明 GTK3 与 WebKitGTK 4.1 运行时依赖。当前工作流仍没有 macOS 签名／公证或 Windows 签名。
+以及每个文件对应的 `.sha256`。post-package hook 新增到 `dist/` 的文件同样会自动生成 checksum 并进入 GitHub Release。
+
+Release job 不再写死 package 格式，而是验证下载到的全部 `.sha256`，并拒绝空文件。SHA256 用于完整性校验，不是代码签名。当前仍未内置 Windows Authenticode、macOS Developer ID/notarization、AppImage、DMG 或 MSI；这些可以先通过 post-package hook 使用，后续再逐步升为 Kit 内置 builder。
 
 ## 常见问题
 
@@ -156,4 +217,4 @@ SHA256 用于完整性校验，不是代码签名。开启 `linux-deb` 时 `.deb
 | macOS 裸 go run 缺少 UTType 符号 | 优先用 Wails 构建器；它会补齐 UniformTypeIdentifiers 框架链接 |
 | wrapper 报错但 CI 看似成功 | 检查 PowerShell 的 LASTEXITCODE 是否正确退出 |
 
-v0.5.2 起，Kit 自身 Linux CI 会额外构建最小 Debian 包，直接校验 control metadata；消费者仍应在启用 `linux-deb` 后通过自己的 CI / tag Release 做最终产物验收。准确状态见 [进度清单](status.md)。
+本轮修复已经通过普通消费者 CI，新的消费者 tag Release 路径仍待真实发布验收。准确状态见 [进度清单](status.md)。

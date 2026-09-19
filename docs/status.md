@@ -8,7 +8,7 @@
 
 第一阶段公共抽象已经可用，FRP 已实际复用 Runtime／tray／autostart／CI。Review 后的关键修复已提交推送，Kit 和 FRP 的三平台 CI 全绿。
 
-当前发布目标为 **Kit v0.5.0**。v0.5.0 在 v0.4.x 配置与 Secure Config 基础上新增 Runtime Theme：4 个内置 fallback Theme、远程 manifest、SHA-256 校验和 last-known-good 完整快照。消费者启用 Runtime Theme 后，Theme 内容更新不再要求重新构建应用。
+当前发布目标为 **Kit v0.6.0**。v0.6.0 在 Runtime Theme 与 v0.5.1 `.deb` 基础上新增 Packaging Pipeline：`desktopkit package linux` 内置 raw / deb / tar.gz、统一 SHA256、Debian desktop/icon 安装与 reusable workflow post-package hook。后续 AppImage、DMG、MSI 等复杂格式可以先通过 hook 接入，再逐步升级为 Kit 一等 builder，而不需要重写 Release 汇总逻辑。
 
 ## 已完成的工作
 
@@ -21,7 +21,7 @@
 | 配置路径 | 跨平台统一 XDG / `~/.config/<app-id>` 路径 API，不自动迁移旧消费者 |
 | Secure Config | 系统凭据库托管随机主密钥；AES-256-GCM 加密 Secret/JSON，无明文降级 |
 | Runtime Theme | 4 个内置 fallback；远程主题整包同步、SHA-256 校验、共享缓存、完整快照与离线恢复 |
-| 构建工程 | Windows／Linux／macOS 并行 reusable workflow、wrapper、SHA256、可选 Release |
+| 构建工程 | Windows／Linux／macOS 并行 reusable workflow、wrapper、Packaging Pipeline、通用 post-package hook、SHA256、可选 Release |
 | 本轮 Runtime 修复 | macOS 主循环整合、托盘就绪／故障恢复、窗口并发保护、业务动作串行化 |
 | 本轮接口与边界 | BeforeClose／SecondInstance／TrayError／AutoStartProvider，Linux quoting、UI FS、图标限制、Release 产物范围 |
 | FRP 消费者 | 从自有桌面基础设施迁入 Kit；修复分支切换 HideSafe、固定公共依赖和 workflow SHA |
@@ -66,8 +66,9 @@ PR：
 | AI Dev Manager | 未接入 | 验证后台服务退出选择、设置通知及复杂构建 wrapper |
 | CodexPro+ | 未接入 | 验证第二次启动行为、额外 core build 和资源流程 |
 | StatusNotifier host 探测 | 未实现 | 区分注册与可见宿主；宿主消失后的恢复与桌面兼容性 |
-| 共享 build/package CLI | 未实现 | 根据更多消费者的共同需求确定 API |
-| deb／安装包抽象 | 未实现 | 包结构、依赖、升级与卸载约定 |
+| 共享 build/package CLI | 已实现基础 | `desktopkit package linux` 已支持 raw / deb / tar.gz；后续按消费者需求扩展 Windows/macOS 一等格式 |
+| deb／安装包抽象 | 已实现基础 | pure-Go `.deb`、desktop file、icon、依赖元数据与 SHA256；后续补升级/卸载脚本与更多策略 |
+| AppImage / DMG / MSI | 扩展点已就绪 | 当前用 post-package hook；成熟后升级为 Kit 内置 builder |
 | macOS signing/notarization | 未实现 | 签名、公证及正式分发验证 |
 
 本轮按用户确认推进正式发布。尚未执行的人工桌面验收仍保留为待办；发布后再分批迁移其他产品，每个消费者分别验证 Runtime、产品退出语义和构建链路。

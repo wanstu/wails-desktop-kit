@@ -25,6 +25,11 @@ on:
         required: false
         default: "v2.15.0"
         type: string
+      desktopkit-cli-version:
+        description: "Desktop Kit helper version used for package staging."
+        required: false
+        default: "v0.6.0"
+        type: string
       test-command:
         required: false
         default: "go test ./..."
@@ -43,15 +48,73 @@ on:
         required: false
         default: ""
         type: string
+      post-package-command-windows:
+        description: "Optional trusted repository-root command that can add extra Windows release files to dist/."
+        required: false
+        default: ""
+        type: string
+      post-package-command-linux:
+        description: "Optional trusted repository-root command that can add extra Linux release files to dist/ (for example AppImage)."
+        required: false
+        default: ""
+        type: string
+      post-package-command-macos:
+        description: "Optional trusted repository-root command that can add extra macOS release files to dist/."
+        required: false
+        default: ""
+        type: string
+      linux-package-formats:
+        description: "Comma-separated built-in Linux formats: raw,deb,tar.gz."
+        required: false
+        default: "raw"
+        type: string
+      linux-package-name:
+        description: "Debian package / desktop asset name. Empty derives it from app-name."
+        required: false
+        default: ""
+        type: string
+      linux-package-description:
+        description: "Linux package description."
+        required: false
+        default: "Wails desktop application"
+        type: string
+      linux-package-maintainer:
+        description: "Debian Maintainer field. Empty uses the GitHub repository owner."
+        required: false
+        default: ""
+        type: string
+      linux-deb-depends:
+        description: "Debian Depends metadata."
+        required: false
+        default: "libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0"
+        type: string
+      linux-deb-section:
+        required: false
+        default: "utils"
+        type: string
+      linux-deb-priority:
+        required: false
+        default: "optional"
+        type: string
+      linux-desktop-file:
+        description: "Optional repository-relative .desktop file included in deb/tar.gz."
+        required: false
+        default: ""
+        type: string
+      linux-icon-file:
+        description: "Optional repository-relative icon included in deb/tar.gz."
+        required: false
+        default: ""
+        type: string
       linux-deb:
-        description: "Also package the Linux amd64 binary as a Debian .deb artifact."
+        description: "Deprecated compatibility flag. true adds deb to linux-package-formats."
         required: false
         default: false
         type: boolean
       linux-deb-description:
-        description: "Description written to the Debian control metadata."
+        description: "Deprecated alias for linux-package-description; kept for existing callers."
         required: false
-        default: "Wails desktop application"
+        default: ""
         type: string
       publish-release:
         description: "Publish a GitHub Release after all platform builds"
@@ -106,6 +169,11 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ inputs.wails-version }}
 
+      - name: Install Desktop Kit packaging helper
+        if: runner.os == 'Linux'
+        shell: bash
+        run: go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@${{ inputs.desktopkit-cli-version }}
+
       - name: Test
         if: inputs.test-command != ''
         run: ${{ inputs.test-command }}
@@ -159,11 +227,8 @@ jobs:
           if ($env:ASSET_VERSION) {
             $assetBase = "$assetBase-$($env:ASSET_VERSION)"
           }
-          $targetName = "$assetBase-windows-amd64.exe"
-          $target = Join-Path 'dist' $targetName
+          $target = Join-Path 'dist' "$assetBase-windows-amd64.exe"
           Copy-Item $source $target -Force
-          $hash = (Get-FileHash $target -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $targetName" | Set-Content -NoNewline "$target.sha256"
 
       - name: Stage Linux release files
         if: runner.os == 'Linux'
@@ -171,57 +236,55 @@ jobs:
         env:
           APP_NAME: ${{ inputs.app-name }}
           ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          DEB_DESCRIPTION: ${{ inputs.linux-deb-description }}
+          PACKAGE_FORMATS: ${{ inputs.linux-package-formats }}
+          LEGACY_DEB: ${{ inputs.linux-deb }}
+          PACKAGE_NAME: ${{ inputs.linux-package-name }}
+          PACKAGE_DESCRIPTION: ${{ inputs.linux-deb-description != '' && inputs.linux-deb-description || inputs.linux-package-description }}
+          PACKAGE_MAINTAINER: ${{ inputs.linux-package-maintainer }}
+          DEB_DEPENDS: ${{ inputs.linux-deb-depends }}
+          DEB_SECTION: ${{ inputs.linux-deb-section }}
+          DEB_PRIORITY: ${{ inputs.linux-deb-priority }}
+          DESKTOP_FILE: ${{ inputs.linux-desktop-file }}
+          ICON_FILE: ${{ inputs.linux-icon-file }}
         run: |
           set -euo pipefail
-          mkdir -p dist
           asset_base="$APP_NAME"
+          package_version="0.0.0~ci${GITHUB_RUN_NUMBER}"
           if [[ -n "$ASSET_VERSION" ]]; then
             asset_base="$asset_base-$ASSET_VERSION"
+            package_version="${ASSET_VERSION#v}"
           fi
-          target="$asset_base-linux-amd64"
-          cp '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}' "dist/$target"
-          chmod +x "dist/$target"
-          (
-            cd dist
-            sha256sum "$target" > "$target.sha256"
+
+          formats="$PACKAGE_FORMATS"
+          if [[ "$LEGACY_DEB" == "true" ]] && [[ ",$formats," != *",deb,"* ]]; then
+            formats="$formats,deb"
+          fi
+
+          args=(
+            package linux
+            --input '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}'
+            --dist dist
+            --app-name "$APP_NAME"
+            --asset-base "$asset_base"
+            --package-version "$package_version"
+            --arch amd64
+            --formats "$formats"
+            --description "$PACKAGE_DESCRIPTION"
+            --maintainer "${PACKAGE_MAINTAINER:-$GITHUB_REPOSITORY_OWNER}"
+            --depends "$DEB_DEPENDS"
+            --section "$DEB_SECTION"
+            --priority "$DEB_PRIORITY"
           )
-
-          if [[ '${{ inputs.linux-deb }}' == 'true' ]]; then
-            package_name="$(printf '%s' "$APP_NAME" | tr '[:upper:]_' '[:lower:]-')"
-            if [[ ! "$package_name" =~ ^[a-z0-9][a-z0-9+.-]+$ ]]; then
-              echo "Invalid Debian package name derived from app-name: $package_name" >&2
-              exit 1
-            fi
-
-            if [[ -n "$ASSET_VERSION" ]]; then
-              package_version="${ASSET_VERSION#v}"
-            else
-              package_version="0.0.0~ci${GITHUB_RUN_NUMBER}"
-            fi
-
-            deb_root="$(mktemp -d)"
-            trap 'rm -rf "$deb_root"' EXIT
-            install -Dm755 "dist/$target" "$deb_root/usr/bin/$APP_NAME"
-            mkdir -p "$deb_root/DEBIAN"
-            {
-              echo "Package: $package_name"
-              echo "Version: $package_version"
-              echo "Section: utils"
-              echo "Priority: optional"
-              echo "Architecture: amd64"
-              echo "Maintainer: ${GITHUB_REPOSITORY_OWNER}"
-              echo "Depends: libgtk-3-0 | libgtk-3-0t64, libwebkit2gtk-4.1-0"
-              printf 'Description: %s\n' "$DEB_DESCRIPTION"
-            } > "$deb_root/DEBIAN/control"
-
-            deb_target="$asset_base-linux-amd64.deb"
-            dpkg-deb --build --root-owner-group "$deb_root" "dist/$deb_target"
-            (
-              cd dist
-              sha256sum "$deb_target" > "$deb_target.sha256"
-            )
+          if [[ -n "$PACKAGE_NAME" ]]; then
+            args+=(--package-name "$PACKAGE_NAME")
           fi
+          if [[ -n "$DESKTOP_FILE" ]]; then
+            args+=(--desktop-file "$DESKTOP_FILE")
+          fi
+          if [[ -n "$ICON_FILE" ]]; then
+            args+=(--icon "$ICON_FILE")
+          fi
+          desktopkit "${args[@]}"
 
       - name: Stage macOS release files
         if: runner.os == 'macOS'
@@ -240,10 +303,55 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent \
             '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}.app' \
             "dist/$target"
-          (
-            cd dist
-            shasum -a 256 "$target" > "$target.sha256"
-          )
+
+      - name: Product post-package hook (Windows)
+        if: runner.os == 'Windows' && inputs.post-package-command-windows != ''
+        shell: pwsh
+        run: ${{ inputs.post-package-command-windows }}
+
+      - name: Product post-package hook (Linux)
+        if: runner.os == 'Linux' && inputs.post-package-command-linux != ''
+        shell: bash
+        run: ${{ inputs.post-package-command-linux }}
+
+      - name: Product post-package hook (macOS)
+        if: runner.os == 'macOS' && inputs.post-package-command-macos != ''
+        shell: bash
+        run: ${{ inputs.post-package-command-macos }}
+
+      - name: Generate checksums (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = Get-ChildItem dist -File | Where-Object { $_.Name -notlike '*.sha256' }
+          if (-not $files) { throw 'No release files found in dist/' }
+          foreach ($file in $files) {
+            $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($file.Name)" | Set-Content -NoNewline "$($file.FullName).sha256"
+          }
+
+      - name: Generate checksums (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for path in dist/*; do
+            [[ -f "$path" ]] || continue
+            [[ "$path" == *.sha256 ]] && continue
+            found=1
+            file="$(basename "$path")"
+            if [[ "$RUNNER_OS" == "macOS" ]]; then
+              (cd dist && shasum -a 256 "$file" > "$file.sha256")
+            else
+              (cd dist && sha256sum "$file" > "$file.sha256")
+            fi
+          done
+          if [[ "$found" != "1" ]]; then
+            echo "No release files found in dist/" >&2
+            exit 1
+          fi
 
       - name: Upload platform artifact
         uses: actions/upload-artifact@v6
@@ -278,28 +386,34 @@ jobs:
           name: ${{ inputs.app-name }}-macos-universal
           path: dist
 
-      - name: Verify platform release files
+      - name: Verify release files
         shell: bash
-        env:
-          APP_NAME: ${{ inputs.app-name }}
-          ASSET_VERSION: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          cd dist
-          asset_base="$APP_NAME-$ASSET_VERSION"
-          files=(
-            "$asset_base-windows-amd64.exe"
-            "$asset_base-linux-amd64"
-            "$asset_base-macos-universal.app.zip"
-          )
-          if [[ '${{ inputs.linux-deb }}' == 'true' ]]; then
-            files+=("$asset_base-linux-amd64.deb")
+          shopt -s nullglob
+          checksums=(dist/*.sha256)
+          if (( ${#checksums[@]} == 0 )); then
+            echo "No checksums found in downloaded platform artifacts" >&2
+            exit 1
           fi
-          for file in "${files[@]}"; do
-            test -s "$file"
-            test -s "$file.sha256"
-            sha256sum --check "$file.sha256"
+          for checksum in "${checksums[@]}"; do
+            (
+              cd dist
+              sha256sum --check "$(basename "$checksum")"
+            )
           done
+
+          files=(dist/*)
+          release_files=0
+          for file in "${files[@]}"; do
+            [[ "$file" == *.sha256 ]] && continue
+            [[ -s "$file" ]] || { echo "Empty release file: $file" >&2; exit 1; }
+            release_files=$((release_files + 1))
+          done
+          if (( release_files < 3 )); then
+            echo "Expected at least one release file from each platform, got $release_files" >&2
+            exit 1
+          fi
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3

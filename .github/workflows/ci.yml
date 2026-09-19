@@ -82,3 +82,41 @@ jobs:
 
       - name: Vet
         run: go vet ./...
+
+      - name: Linux packaging smoke
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(mktemp -d)"
+          trap 'rm -rf "$root"' EXIT
+          printf '#!/bin/sh\necho demo\n' > "$root/demo"
+          chmod +x "$root/demo"
+          cat > "$root/demo.desktop" <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=Demo
+          Exec=demo
+          Icon=demo
+          Categories=Utility;
+          EOF
+          go run ./cmd/desktopkit package linux \
+            --input "$root/demo" \
+            --dist "$root/dist" \
+            --app-name demo \
+            --asset-base demo-v1.2.3 \
+            --package-name demo \
+            --package-version 1.2.3 \
+            --formats raw,deb,tar.gz \
+            --description "Desktop Kit packaging smoke" \
+            --maintainer "Desktop Kit CI" \
+            --desktop-file "$root/demo.desktop"
+
+          test -x "$root/dist/demo-v1.2.3-linux-amd64"
+          tar -tzf "$root/dist/demo-v1.2.3-linux-amd64.tar.gz" | grep -F 'demo-v1.2.3-linux-amd64/demo'
+          dpkg-deb --info "$root/dist/demo-v1.2.3-linux-amd64.deb"
+          dpkg-deb --contents "$root/dist/demo-v1.2.3-linux-amd64.deb" | grep -F './usr/bin/demo'
+          (
+            cd "$root/dist"
+            sha256sum --check ./*.sha256
+          )
