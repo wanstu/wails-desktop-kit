@@ -5,7 +5,7 @@ package desktopkit
 import (
 	"context"
 	"fmt"
-	"github.com/wanstu/systray"
+	"github.com/gogpu/systray"
 	"golang.org/x/sys/windows"
 )
 

@@ -51,7 +51,7 @@
 
 ## 托盘菜单
 
-配置顺序为：标准显示／隐藏、`Items`、`AutoStart`、`FooterItems`、标准退出。Kit 按配置添加组间分隔线；组内可使用 `Separator()`。Linux StatusNotifierItem 默认将左键主激活映射为 `ShowWindow()`，右键保留给 dbusmenu 托盘菜单。
+配置顺序为：标准显示／隐藏、`Items`、`AutoStart`、`FooterItems`、标准退出。Kit 按配置添加组间分隔线；组内可使用 `Separator()`。Linux 托盘点击语义由桌面环境与 systray 后端决定；Kit 不额外覆盖 StatusNotifierItem 的主激活/菜单行为。
 
 - `Enabled: true` 时必须提供有效 PNG `Icon`。
 - `DisableShowHide` 移除默认显示／隐藏项。
