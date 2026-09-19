@@ -129,15 +129,17 @@ command 输入就是可执行脚本，只应来自可信仓库配置。不要把
 
 ## 产物与校验
 
-每个平台上传一个 artifact，保留 14 天：
+每个平台上传一个 artifact，保留 14 天。artifact 容器名保持稳定，便于 Release job 精确下载；**tag 构建时，容器内的发布文件会自动带 tag 版本号**：
 
-| artifact 名称 | 核心文件 |
-| --- | --- |
-| `<app-name>-windows-amd64` | `<app-name>-windows-amd64.exe` 及 .sha256 |
-| `<app-name>-linux-amd64` | `<app-name>-linux-amd64` 及 .sha256 |
-| `<app-name>-macos-universal` | `<app-name>-macos-universal.app.zip` 及 .sha256 |
+| artifact 名称 | 普通分支／PR 核心文件 | tag `v1.3` 的 Release 文件 |
+| --- | --- | --- |
+| `<app-name>-windows-amd64` | `<app-name>-windows-amd64.exe` | `<app-name>-v1.3-windows-amd64.exe` |
+| `<app-name>-linux-amd64` | `<app-name>-linux-amd64` | `<app-name>-v1.3-linux-amd64` |
+| `<app-name>-macos-universal` | `<app-name>-macos-universal.app.zip` | `<app-name>-v1.3-macos-universal.app.zip` |
 
-发布步骤只下载同一次 run 的这三个指定 artifact，确认核心产物存在且非空，再验证 SHA256。构建端仍会上传 `dist/*`，发布端仍会附加下载目录中的文件；不要把临时文件放进 dist，也不要让各平台额外文件使用相同名称。
+对应的 `.sha256` 文件使用相同基础文件名，例如 `<app-name>-v1.3-windows-amd64.exe.sha256`，文件内容中的校验目标也会同步带版本号。
+
+发布步骤只下载同一次 run 的这三个指定 artifact，确认带当前 tag 的核心产物存在且非空，再验证 SHA256。构建端仍会上传 `dist/*`，发布端仍会附加下载目录中的文件；不要把临时文件放进 dist，也不要让各平台额外文件使用相同名称。
 
 SHA256 用于完整性校验，不是代码签名。当前工作流没有 macOS 签名／公证，也没有 Windows 签名或 Linux 安装包抽象。
 

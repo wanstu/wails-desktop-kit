@@ -138,38 +138,64 @@ jobs:
       - name: Stage Windows release files
         if: runner.os == 'Windows'
         shell: pwsh
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+          ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           $source = Join-Path '${{ inputs.desktop-dir }}' 'build/bin/${{ inputs.app-name }}.exe'
-          $target = 'dist/${{ inputs.app-name }}-windows-amd64.exe'
+          $assetBase = $env:APP_NAME
+          if ($env:ASSET_VERSION) {
+            $assetBase = "$assetBase-$($env:ASSET_VERSION)"
+          }
+          $targetName = "$assetBase-windows-amd64.exe"
+          $target = Join-Path 'dist' $targetName
           Copy-Item $source $target -Force
           $hash = (Get-FileHash $target -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  ${{ inputs.app-name }}-windows-amd64.exe" | Set-Content -NoNewline "$target.sha256"
+          "$hash  $targetName" | Set-Content -NoNewline "$target.sha256"
 
       - name: Stage Linux release files
         if: runner.os == 'Linux'
         shell: bash
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+          ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}' 'dist/${{ inputs.app-name }}-linux-amd64'
-          chmod +x 'dist/${{ inputs.app-name }}-linux-amd64'
+          asset_base="$APP_NAME"
+          if [[ -n "$ASSET_VERSION" ]]; then
+            asset_base="$asset_base-$ASSET_VERSION"
+          fi
+          target="$asset_base-linux-amd64"
+          cp '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}' "dist/$target"
+          chmod +x "dist/$target"
           (
             cd dist
-            sha256sum '${{ inputs.app-name }}-linux-amd64' > '${{ inputs.app-name }}-linux-amd64.sha256'
+            sha256sum "$target" > "$target.sha256"
           )
 
       - name: Stage macOS release files
         if: runner.os == 'macOS'
         shell: bash
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+          ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           set -euo pipefail
           mkdir -p dist
-          ditto -c -k --sequesterRsrc --keepParent             '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}.app'             'dist/${{ inputs.app-name }}-macos-universal.app.zip'
+          asset_base="$APP_NAME"
+          if [[ -n "$ASSET_VERSION" ]]; then
+            asset_base="$asset_base-$ASSET_VERSION"
+          fi
+          target="$asset_base-macos-universal.app.zip"
+          ditto -c -k --sequesterRsrc --keepParent \
+            '${{ inputs.desktop-dir }}/build/bin/${{ inputs.app-name }}.app' \
+            "dist/$target"
           (
             cd dist
-            shasum -a 256 '${{ inputs.app-name }}-macos-universal.app.zip'               > '${{ inputs.app-name }}-macos-universal.app.zip.sha256'
+            shasum -a 256 "$target" > "$target.sha256"
           )
 
       - name: Upload platform artifact
@@ -209,10 +235,12 @@ jobs:
         shell: bash
         env:
           APP_NAME: ${{ inputs.app-name }}
+          ASSET_VERSION: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           cd dist
-          for file in "$APP_NAME-windows-amd64.exe" "$APP_NAME-linux-amd64" "$APP_NAME-macos-universal.app.zip"; do
+          asset_base="$APP_NAME-$ASSET_VERSION"
+          for file in "$asset_base-windows-amd64.exe" "$asset_base-linux-amd64" "$asset_base-macos-universal.app.zip"; do
             test -s "$file"
             test -s "$file.sha256"
             sha256sum --check "$file.sha256"
