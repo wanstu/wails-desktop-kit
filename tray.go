@@ -1,6 +1,11 @@
 package desktopkit
 
-import "github.com/wanstu/wails-desktop-kit/autostart"
+// AutoStartProvider allows applications to preserve their own settings and notifications.
+type AutoStartProvider interface {
+	Supported() bool
+	Enabled() (bool, error)
+	SetEnabled(bool) error
+}
 
 // TrayItemKind identifies a declarative tray menu item.
 type TrayItemKind uint8
@@ -66,7 +71,7 @@ type TrayConfig struct {
 	FooterItems []TrayItem
 
 	// AutoStart enables the standard launch-at-login checkbox.
-	AutoStart *autostart.Manager
+	AutoStart AutoStartProvider
 }
 
 func (c TrayConfig) normalized(title string) TrayConfig {

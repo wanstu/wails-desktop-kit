@@ -51,6 +51,8 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: read
     name: ${{ matrix.name }}
     strategy:
       fail-fast: false
@@ -185,11 +187,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download platform artifacts
+      - name: Download windows-amd64 artifact
         uses: actions/download-artifact@v4
         with:
+          name: ${{ inputs.app-name }}-windows-amd64
           path: dist
-          merge-multiple: true
+
+      - name: Download linux-amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.app-name }}-linux-amd64
+          path: dist
+
+      - name: Download macos-universal artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.app-name }}-macos-universal
+          path: dist
+
+      - name: Verify platform release files
+        shell: bash
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+        run: |
+          set -euo pipefail
+          cd dist
+          for file in "$APP_NAME-windows-amd64.exe" "$APP_NAME-linux-amd64" "$APP_NAME-macos-universal.app.zip"; do
+            test -s "$file"
+            test -s "$file.sha256"
+            sha256sum --check "$file.sha256"
+          done
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
