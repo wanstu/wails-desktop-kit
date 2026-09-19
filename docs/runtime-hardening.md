@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [Runtime 用法](runtime.md) · [进度与待办](status.md)
 
-这些变更位于 `fix/runtime-hardening`，不包含在已发布的 v0.1.2 中。完整示例使用首页固定的修复提交；尚未创建新的稳定版本。
+这些变更纳入 v0.2.0，不包含在 v0.1.2 中。完整示例使用首页固定的正式版本。
 
 ## 修复内容
 
@@ -19,6 +19,14 @@
 | Release | 下载本次 run 的全部 artifact，混入无关产物 | 固定三个平台 artifact，并检查核心文件与 SHA256；build job 明确只读 |
 
 Linux 的 HideSafe 仍保持保守策略，没有完成可见 StatusNotifier host 探测。macOS LaunchAgent 仍采用“写入配置、下次登录生效”，没有新增 launchctl 即时加载／卸载。
+
+## 源码兼容范围
+
+常规消费者只需升级依赖和工作流引用，无需重写业务代码：现有命名字段 Config、菜单回调与直接传入 `*autostart.Manager` 的方式继续可用；新增 hook 为可选项。
+
+`TrayConfig.AutoStart` 的静态类型改为 `AutoStartProvider`。如果代码把它直接赋回 `*autostart.Manager`，或调用接口之外的具体类型方法，需要改为使用接口，或保留应用原有 Manager 指针。新增结构体字段也不保证兼容未按字段名初始化结构体的写法。
+
+源码可编译不等于行为完全不变：下方列出了隐藏、退出、FS 和输入检查的变化。FRP 的 HideSafe 是产品行为选择，不是为了编译通过而被迫修改。
 
 ## 升级时需要检查的行为变化
 

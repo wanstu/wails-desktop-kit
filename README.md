@@ -4,31 +4,35 @@
 
 首个实际消费者是 [FRP Client Manager](https://github.com/wanstu/frp-client-manager)。IME Lock、AI Dev Manager、CodexPro+ 尚未接入。
 
-## 先选对版本
+## 安装 v0.2.0
 
-以下状态核对于 **2026-09-19**。本分支文档描述本轮修复后的行为。
-
-| 版本 | 状态 | 用途 |
-| --- | --- | --- |
-| `v0.1.2` | 最新已发布稳定版本 | 现有消费者的正式基线；不包含本轮 Runtime 修复 |
-| `b3145064740ca37c277b5347dba6a095256b46f6` | 修复已推送，尚未发布新稳定版本 | 本指南示例和 FRP 修复分支使用的代码／工作流版本 |
-| `eb20724` | 修复分支后续 CI 配置提交 | 补齐 macOS 运行检查的 Wails 链接参数；业务代码与上一行一致 |
-
-使用稳定版本：
+本文对应 **v0.2.0**，包含本轮 Runtime 与跨平台边界修复。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.1.2
+go get github.com/wanstu/wails-desktop-kit@v0.2.0
 ~~~
 
-验证本轮修复、使用本文中的新扩展点：
+GitHub reusable workflow 同步固定：
 
-~~~powershell
-go get github.com/wanstu/wails-desktop-kit@b3145064740ca37c277b5347dba6a095256b46f6
+~~~yaml
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.2.0
 ~~~
 
-Go 会记录公开可解析的伪版本 `v0.1.3-0.20260918165411-b3145064740c`。这不是已经发布的 `v0.1.3`，也没有发布 `v0.2.0`。Go Module 与 reusable workflow 是两处独立引用，需要一起升级；可提交的依赖不要使用本地 `replace`。
+Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
 
-继续使用旧版本时，请阅读 [v0.1.2 对应文档](https://github.com/wanstu/wails-desktop-kit/tree/v0.1.2)，不要将新 API 示例直接复制到旧依赖中。
+### 使用方需要改代码吗
+
+采用命名字段 Config、声明式菜单，并直接传入 `*autostart.Manager` 的已有用法可以继续编译。新增 hook 都是可选项，通常无需修改业务逻辑。
+
+本轮仍有需要核对的边界：AutoStart 字段类型由具体指针改为接口，依赖其具体类型的读取代码需适配；主动退出、隐藏时机及 UI 资源根目录需符合 [升级契约](docs/runtime-hardening.md)。FRP 将 HideAlways 改为 HideSafe 是主动调整 Linux 产品行为，不是适配新 API 的必要改动。
+
+后续升级以保持常规用法兼容为目标；需要使用方修改源码或改变行为的变更会在升级说明中明确列出。这里不承诺所有未来版本都可无条件替换。
+
+| 版本 | 说明 |
+| --- | --- |
+| `v0.2.0` | 本轮发布版本，包含生命周期加固、边界修复和中文接入文档 |
+| `v0.1.2` | 上一稳定基线，不包含本轮修复；[查看对应文档](https://github.com/wanstu/wails-desktop-kit/tree/v0.1.2) |
+| `b314506`／对应伪版本 | 发布前 FRP 的验证版本；正式接入改用 v0.2.0 |
 
 ## 从这里开始
 
@@ -41,6 +45,7 @@ Go 会记录公开可解析的伪版本 `v0.1.3-0.20260918165411-b3145064740c`�
 | 判断哪些代码应放入 Kit | [架构边界](docs/architecture.md) |
 | 对照首个消费者的实际接入 | [FRP 迁移记录](docs/frp-migration.md) |
 | 升级时检查行为变化 | [本轮修复说明](docs/runtime-hardening.md) |
+| 了解源码兼容与本地目录范围 | [兼容与本地开发](docs/compatibility-and-local-development.md) |
 | 已完成、验证证据和剩余工作 | [进度与待办](docs/status.md) |
 
 ## 提供哪些能力
@@ -68,6 +73,6 @@ Linux 的 StatusNotifierItem 注册成功不等于桌面有可见托盘宿主。
 
 ## 当前验收状态
 
-Kit 与 FRP 修复分支的 Windows／Linux／macOS CI 已通过，Windows 和 macOS 的真实 WebView＋托盘启动退出检查已通过。两个修复 PR 仍未合并，尚未发布新稳定版本。
+Kit 与 FRP 修复分支的 Windows／Linux／macOS CI 已通过，Windows 和 macOS 的真实 WebView＋托盘启动退出检查已通过。修复及文档纳入 v0.2.0 发布，FRP 正在切换正式版本依赖。
 
 桌面菜单操作、真实登录自启、宿主丢失与消费者 tag Release 的验收仍待完成。详见 [进度与待办](docs/status.md)。

@@ -92,7 +92,7 @@ input、select、textarea 放在 `dk-field` 内才会获得相应表单样式。
 按首页版本选择安装。下面固定本轮修复版本：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.1.3-0.20260918165411-b3145064740c
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.2.0
 desktopkit icon --input assets/icons/source.png --output build/appicon.png --canvas 1024 --fill 0.94
 ~~~
 

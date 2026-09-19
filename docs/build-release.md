@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定本轮修复提交，与 FRP 修复分支一致。继续使用稳定版时，将 Go Module 和 workflow 一起固定到 v0.1.2，并接受该版本尚无本轮修复的限制。Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定本轮正式版本 v0.2.0；FRP 正在切换到这一版本。继续使用稳定版时，将 Go Module 和 workflow 一起固定到 v0.1.2，并接受该版本尚无本轮修复的限制。Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@b3145064740ca37c277b5347dba6a095256b46f6
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.2.0
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -68,7 +68,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@b3145064740ca37c277b5347dba6a095256b46f6
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.2.0
     with:
       app-name: desktop-demo
       desktop-dir: .

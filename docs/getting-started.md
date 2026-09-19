@@ -24,7 +24,7 @@ go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
 New-Item -ItemType Directory -Path desktop-demo
 Set-Location desktop-demo
 go mod init example.com/desktop-demo
-go get github.com/wanstu/wails-desktop-kit@b3145064740ca37c277b5347dba6a095256b46f6
+go get github.com/wanstu/wails-desktop-kit@v0.2.0
 New-Item -ItemType Directory -Path assets, frontend, build
 ~~~
 
