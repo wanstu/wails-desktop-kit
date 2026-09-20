@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.8.0。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.8.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -30,7 +30,7 @@ v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程�
 Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.8.0
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.8.1
 
 desktopkit package linux `
   --input .\build\bin\desktop-demo `
@@ -68,7 +68,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -94,7 +94,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -120,7 +120,7 @@ jobs:
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.8.0` | Packaging helper 版本 |
+| `desktopkit-cli-version` | `v0.8.1` | Packaging helper 版本 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
@@ -220,7 +220,7 @@ desktopkit doctor --root .
 发现 Kit module 与 workflow 版本不一致时返回非零退出码，适合本地升级前或 CI 检查。升级时可同时修改 `go.mod` 和所有 reusable workflow 引用：
 
 ~~~powershell
-desktopkit upgrade --root . --to v0.8.0
+desktopkit upgrade --root . --to v0.8.1
 ~~~
 
 默认随后执行 `go mod tidy`；只做文本升级可加 `--tidy=false`。升级命令不会改业务源码，也不会自动改变 Runtime policy。

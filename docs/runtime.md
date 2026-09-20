@@ -50,6 +50,7 @@
 | `ShowError(title, err)` | 恢复窗口并显示错误对话框；nil error 不处理 |
 | `OpenURL(url)` | 使用当前 Wails runtime 打开系统浏览器 |
 | `Emit(event, data...)` | 发送 Wails event；runtime 未就绪时返回错误 |
+| `ClipboardSetText(text)` / `ClipboardGetText()` | 使用 Wails 原生系统剪贴板；避免业务后端各自维护平台实现 |
 | `OpenFileDialog(options)` / `MessageDialog(options)` | 复用 Controller 持有的 runtime context |
 
 需要退出时优先使用 Kit 回调提供的 `Controller.Quit()`。直接调用 Wails 的 Quit 不会设置 Kit 的主动退出标记，在允许隐藏的情况下可能被解释为关闭到托盘。
@@ -93,6 +94,23 @@ func exitTray(icon []byte, stopAll func() error) desktopkit.TrayConfig {
 业务动作和 checkbox 读取在同一 worker 上串行运行；正在等待或执行的同一动作被重复点击时，重复请求会丢弃。状态会定期刷新，动作完成后也会刷新。显示／隐藏不等待业务动作队列。
 
 回调必须能结束，耗时任务应有自己的取消或超时控制。Shutdown 不等待正在执行的业务回调结束，也无法强行终止它。前端与托盘同时访问的业务状态仍需应用自行同步。
+
+### 前端 Clipboard helper
+
+当应用使用 `ui.Mount(...)` 时，可加载 Kit Runtime helper：
+
+~~~html
+<script src="/desktopkit/runtime.js"></script>
+~~~
+
+前端统一使用：
+
+~~~js
+await window.DesktopKit.clipboard.writeText(text);
+const text = await window.DesktopKit.clipboard.readText();
+~~~
+
+桌面 Wails 运行时优先调用原生 `window.runtime.ClipboardSetText/ClipboardGetText`；普通 Web 预览才降级到浏览器 Clipboard API，写入还保留 `execCommand('copy')` 作为最后兼容路径。调用失败会 reject，不应静默吞掉错误。
 
 ## 生命周期 hook
 

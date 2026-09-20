@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.8.0
+## 安装 v0.8.1
 
-本文对应 **v0.8.0**。本版集中消除消费者中的最后一公里重复：新增原子文件与泛型 JSON Store、显式配置迁移原语、Theme Preference 协议、重复启动策略、Controller Runtime helper、可选平台 CI、消费者 doctor/upgrade、Wails 图标准备和 Linux 多二进制 Packaging。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.8.1**。本版在 v0.8.0 基础上补充原生 Clipboard Runtime、前端 Clipboard helper，以及基于 `crypto/rand` 的安全随机 Secret 生成；同时新增 Kit Roadmap，明确 Windows Tray Tooltip、securetransport 与 E2EE 的后续边界。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.8.0
+go get github.com/wanstu/wails-desktop-kit@v0.8.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.8.1` | 原生 Clipboard Runtime/前端 helper、安全随机 Secret、Roadmap；workflow 默认 packaging helper 同步到 v0.8.1 |
 | `v0.8.0` | 配置存储/迁移、重复启动策略、Runtime helper、可选平台 CI、doctor/upgrade、Wails 图标准备、多二进制 Linux Packaging |
 | `v0.7.2` | 回滚 Linux 托盘点击覆盖与临时 systray fork；保留默认关闭到托盘和 256×256 图标生成 |
 | `v0.7.1` | 尝试调整 Linux 托盘主激活行为，已在 v0.7.2 回滚 |
@@ -63,6 +64,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | 升级时检查行为变化 | [本轮修复说明](docs/runtime-hardening.md) |
 | 了解源码兼容与本地目录范围 | [兼容与本地开发](docs/compatibility-and-local-development.md) |
 | 已完成、验证证据和剩余工作 | [进度与待办](docs/status.md) |
+| Clipboard、Windows 托盘 Tooltip、securetransport 与 E2EE | [未来规划](docs/roadmap.md) |
 
 ## 提供哪些能力
 
@@ -70,12 +72,12 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | --- | --- | --- |
 | 根包 `desktopkit` | Wails 生命周期、单实例、窗口控制、托盘菜单与失败恢复 | 应用 ID、标题、资源、绑定对象、业务回调 |
 | `autostart` | Windows Run、Linux desktop entry、macOS LaunchAgent | 稳定 ID、启动参数、启用／禁用入口 |
-| `ui` | token、布局、表单、按钮、状态、对话框、导航 CSS 与 Theme Runtime JS | 页面结构、交互、数据和无障碍行为 |
+| `ui` | token、布局、表单、按钮、状态、对话框、导航 CSS、Theme Runtime JS 与 Clipboard Runtime helper | 页面结构、交互、数据和无障碍行为 |
 | `theme` | 远程 manifest、Theme CSS 下载、SHA-256 校验、全局缓存与本地 AssetServer | 保存用户的 theme mode / pack 选择 |
 | `icon`／`cmd/desktopkit` | 现有图片规范化；确定性生成圆角底色 + Terminal / Monogram 家族图标 | 产品选择 symbol / monogram、颜色与构建脚本中的调用位置 |
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`；显式文件/目录迁移原语 | 稳定 App ID 与迁移时机 |
 | `atomicfile` / `jsonstore` | 0600 原子替换、泛型 JSON Load/Save/Update、Normalize/Validate hook | 配置 schema、默认值和业务迁移版本 |
-| `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON | Secret 的逻辑 key 与业务生命周期 |
+| `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON；提供 `openssl rand` 等价的安全随机 Secret 生成 | Secret 的逻辑 key 与业务生命周期 |
 | `packaging` / `desktopkit package` | Linux raw / deb / tar.gz、桌面文件、图标、多二进制安装、统一 SHA256 | 产品元数据、可选复杂格式 hook |
 | reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 

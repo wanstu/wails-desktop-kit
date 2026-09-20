@@ -114,6 +114,22 @@ settings, err = store.Update(func(value *Settings) error {
 }
 ~~~
 
+## 安全随机 Secret
+
+Kit 直接提供基于 Go `crypto/rand` 的加密安全随机数，不依赖系统安装 `openssl`：
+
+~~~go
+hexKey, err := secureconfig.RandomHex(32)
+// 与 openssl rand -hex 32 的输出格式一致：32 随机字节 -> 64 位小写 hex
+
+defaultKey, err := secureconfig.RandomSecretHex()
+// 默认同样生成 256-bit / 32-byte Secret
+
+urlSafeKey, err := secureconfig.RandomBase64URL(32)
+~~~
+
+这类 API 适合生成 API Key、Token、一次性初始化 Secret 等；生成函数只返回随机值，不负责持久化。需要落盘时仍应交给 `secureconfig.Store` 或业务自己的安全存储流程。
+
 ## Secure Config
 
 ~~~go

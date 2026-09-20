@@ -26,6 +26,22 @@ func (c *Controller) Emit(event string, data ...interface{}) error {
 	return nil
 }
 
+func (c *Controller) ClipboardSetText(text string) error {
+	ctx := c.Context()
+	if ctx == nil {
+		return ErrRuntimeNotReady
+	}
+	return wailsruntime.ClipboardSetText(ctx, text)
+}
+
+func (c *Controller) ClipboardGetText() (string, error) {
+	ctx := c.Context()
+	if ctx == nil {
+		return "", ErrRuntimeNotReady
+	}
+	return wailsruntime.ClipboardGetText(ctx)
+}
+
 func (c *Controller) OpenFileDialog(options wailsruntime.OpenDialogOptions) (string, error) {
 	ctx := c.Context()
 	if ctx == nil {
