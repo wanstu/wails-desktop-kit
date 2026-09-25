@@ -191,4 +191,12 @@
     getCatalog,
     dispose
   });
+
+  if (!document.querySelector('script[data-desktopkit-about]')) {
+    const aboutScript = document.createElement("script");
+    aboutScript.src = "/desktopkit/about.js";
+    aboutScript.defer = true;
+    aboutScript.dataset.desktopkitAbout = "1";
+    document.head.appendChild(aboutScript);
+  }
 })(window);

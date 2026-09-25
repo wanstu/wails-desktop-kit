@@ -118,6 +118,18 @@ API：
 
 Kit 启动时不会主动读取 `localStorage`、配置文件或系统偏好，因此旧应用升级不会突然改变外观。应用负责保存自己的 `theme = light | dark | system`，并在启动时调用 `apply`。
 
+## 关于 / 版本信息
+
+加载 `/desktopkit/theme.js` 后，Kit 会自动注册 `<dk-about>` 组件。产品只需要在设置页或关于页放置：
+
+~~~html
+<dk-about app-name="SSH Client"></dk-about>
+~~~
+
+正式 CI 构建会生成 `desktopkit-build-info.json`，组件显示完整发布版本和 commit，例如 `v0.3.0-rc.1` / `140d3247776a`。没有生成 metadata 的本地开发构建会明确显示 `dev`，不会伪装成正式版本。
+
+版本 metadata 由 reusable workflow 在 Wails build 之前统一注入；应用不应再手写版本号。
+
 公共组件颜色全部通过 `--dk-*` token 获取。主题模式和主题包是正交概念：`data-dk-theme` 只表示 light / dark 的实际明暗结果，`data-dk-theme-pack` 只表示可选视觉配色。推荐组合用法：
 
 ~~~html

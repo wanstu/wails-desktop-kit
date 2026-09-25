@@ -17,6 +17,7 @@ Usage:
   desktopkit icon generate [options]
   desktopkit icon prepare-wails [options]
   desktopkit package linux [options]
+  desktopkit buildmeta prepare [options]
   desktopkit doctor [options]
   desktopkit upgrade [options]
 
@@ -25,6 +26,7 @@ Commands:
   icon generate     Generate a deterministic Kit family icon without system fonts.
   icon prepare-wails Prepare build/appicon.png and invalidate generated Windows ICO.
   package linux     Stage Linux release artifacts (raw, deb, tar.gz) and SHA256 files.
+  buildmeta prepare Inject release version into Wails metadata and frontend build info.
   doctor            Inspect Kit/Wails/workflow version drift in a consumer repository.
   upgrade           Update Kit module/workflow references in a consumer repository.
 
@@ -51,6 +53,8 @@ func run(args []string) error {
 		return runIcon(args[1:])
 	case "package":
 		return runPackage(args[1:])
+	case "buildmeta":
+		return runBuildMeta(args[1:])
 	case "doctor":
 		return runDoctor(args[1:])
 	case "upgrade":

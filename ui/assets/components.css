@@ -228,7 +228,40 @@
   word-break: break-word;
 }
 
+.dk-about {
+  display: grid;
+  gap: 5px;
+  border-top: 1px solid var(--dk-border-subtle);
+  padding: 12px 0 2px;
+  color: var(--dk-text-secondary);
+}
+
+.dk-about-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--dk-space-4);
+}
+
+.dk-about-name {
+  color: var(--dk-text);
+  font-size: 13px;
+}
+
+.dk-about-version {
+  color: var(--dk-text);
+  font: 12px/1.4 "Cascadia Mono", Consolas, monospace;
+}
+
+.dk-about-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font: 10.5px/1.4 "Cascadia Mono", Consolas, monospace;
+}
+
 @media (max-width: 760px) {
   .dk-form-grid { grid-template-columns: 1fr; }
   .dk-field.is-span-2 { grid-column: auto; }
+  .dk-about-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
 }

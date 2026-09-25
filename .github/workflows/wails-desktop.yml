@@ -28,7 +28,7 @@ on:
       desktopkit-cli-version:
         description: "Desktop Kit helper version used for package staging."
         required: false
-        default: "v0.8.1"
+        default: "v0.9.0-rc.1"
         type: string
       build-windows:
         description: "Build the Windows amd64 desktop artifact."
@@ -224,6 +224,18 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@${{ inputs.desktopkit-cli-version }}
+
+      - name: Prepare build metadata
+        shell: bash
+        env:
+          APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+        run: |
+          set -euo pipefail
+          go run github.com/wanstu/wails-desktop-kit/cmd/desktopkit@${{ inputs.desktopkit-cli-version }} buildmeta prepare \
+            --root . \
+            --desktop-dir '${{ inputs.desktop-dir }}' \
+            --version "$APP_VERSION" \
+            --commit "$GITHUB_SHA"
 
       - name: Test
         if: inputs.test-command != ''

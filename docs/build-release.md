@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前版本线 v0.8.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前版本线 v0.9.0-rc.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -23,6 +23,16 @@ sudo apt-get install -y build-essential libgtk-3-dev libwebkit2gtk-4.1-dev
 
 实际运行还需要图形会话；容器中的编译通过不代表托盘宿主存在。macOS 使用 Wails 构建器处理框架链接和 .app 打包，不能把裸 `go run` 的结果视为标准打包验收。
 
+## Build Metadata
+
+本地需要生成和 Release 一致的版本信息时，可以先运行：
+
+~~~powershell
+desktopkit buildmeta prepare --root . --desktop-dir . --version v1.3.0-rc.1 --commit <git-sha>
+~~~
+
+该命令会更新本次构建使用的 `wails.json` 产品版本、Windows `build/windows/info.json` 以及前端 `desktopkit-build-info.json`。CI checkout 是一次性的，因此 workflow 可以安全注入；本地执行后如不准备提交这些构建 metadata，应还原生成文件。
+
 ## Packaging Pipeline
 
 v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程序，Desktop Kit 的 Packaging Pipeline 负责把程序整理成 Release 资产。
@@ -30,7 +40,7 @@ v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程�
 Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.8.1
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.9.0-rc.1
 
 desktopkit package linux `
   --input .\build\bin\desktop-demo `
@@ -68,7 +78,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.9.0-rc.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -94,7 +104,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.9.0-rc.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -106,6 +116,8 @@ jobs:
 ~~~
 
 发布需同时满足：caller 给出写权限、`publish-release: true`、当前 ref 是 `refs/tags/v...`，且三平台构建成功。普通分支／PR CI 的 Release 跳过是正常结果，不是发布路径已验证。
+
+Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit buildmeta prepare`。tag 版本会同时写入 Wails `info.productVersion`、Windows 版本资源和前端 `desktopkit-build-info.json`。因此 Windows 文件属性不再落回 Wails 默认 `1.0.0`；RC 的完整标识（例如 `v1.3.0-rc.1`）由 About 组件显示，Windows 固定文件版本保持纯数字 `1.3.0`。
 
 带连字符的 tag 会标记为 prerelease，例如 `v1.3.0-rc.1`；普通 `v1.3.0` 不会。先在适当的候选版本验证真实 tag 发布，再决定正式版本。
 
@@ -120,7 +132,7 @@ jobs:
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.8.1` | Packaging helper 版本 |
+| `desktopkit-cli-version` | `v0.9.0-rc.1` | Packaging helper 版本 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
@@ -220,7 +232,7 @@ desktopkit doctor --root .
 发现 Kit module 与 workflow 版本不一致时返回非零退出码，适合本地升级前或 CI 检查。升级时可同时修改 `go.mod` 和所有 reusable workflow 引用：
 
 ~~~powershell
-desktopkit upgrade --root . --to v0.8.1
+desktopkit upgrade --root . --to v0.9.0-rc.1
 ~~~
 
 默认随后执行 `go mod tidy`；只做文本升级可加 `--tidy=false`。升级命令不会改业务源码，也不会自动改变 Runtime policy。

@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.8.1
+## 安装 v0.9.0-rc.1
 
-本文对应 **v0.8.1**。本版在 v0.8.0 基础上补充原生 Clipboard Runtime、前端 Clipboard helper，以及基于 `crypto/rand` 的安全随机 Secret 生成；同时新增 Kit Roadmap，明确 Windows Tray Tooltip、securetransport 与 E2EE 的后续边界。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.9.0-rc.1**。本版补齐发布版本链：tag 自动注入 Wails / Windows 版本资源，提供 `desktopkit-build-info.json` 和统一 `<dk-about>` 组件，避免发布产物长期显示 Wails 默认 `1.0.0` 或应用内无法确认版本。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.8.1
+go get github.com/wanstu/wails-desktop-kit@v0.9.0-rc.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.8.1
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.9.0-rc.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.9.0-rc.1` | Build Metadata/Windows 真实版本资源、`<dk-about>` 统一关于组件、Release tag 自动注入版本与 commit |
 | `v0.8.1` | 原生 Clipboard Runtime/前端 helper、安全随机 Secret、Roadmap；workflow 默认 packaging helper 同步到 v0.8.1 |
 | `v0.8.0` | 配置存储/迁移、重复启动策略、Runtime helper、可选平台 CI、doctor/upgrade、Wails 图标准备、多二进制 Linux Packaging |
 | `v0.7.2` | 回滚 Linux 托盘点击覆盖与临时 systray fork；保留默认关闭到托盘和 256×256 图标生成 |
