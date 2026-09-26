@@ -28,7 +28,7 @@ on:
       desktopkit-cli-version:
         description: "Desktop Kit helper version used for package staging."
         required: false
-        default: "v0.9.0-rc.1"
+        default: "v0.9.0-rc.2"
         type: string
       build-windows:
         description: "Build the Windows amd64 desktop artifact."
@@ -415,6 +415,38 @@ jobs:
             $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($file.Name)" | Set-Content -NoNewline "$($file.FullName).sha256"
           }
+
+      - name: Package Windows zip
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+          ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $payload = @(Get-ChildItem dist -File | Where-Object { $_.Name -notlike '*.sha256' -and $_.Name -notlike '*.zip' })
+          if (-not $payload) { throw 'No Windows release payload found for zip' }
+          $checksums = @()
+          foreach ($file in $payload) {
+            $checksum = "$($file.FullName).sha256"
+            if (-not (Test-Path $checksum)) { throw "Missing checksum for $($file.Name)" }
+            $checksums += Get-Item $checksum
+          }
+          $assetBase = $env:APP_NAME
+          if ($env:ASSET_VERSION) { $assetBase = "$assetBase-$($env:ASSET_VERSION)" }
+          $zip = Join-Path 'dist' "$assetBase-windows-amd64.zip"
+          $archiveFiles = @($payload.FullName) + @($checksums.FullName)
+          Compress-Archive -Path $archiveFiles -DestinationPath $zip -Force
+
+          $verifyDir = Join-Path $env:RUNNER_TEMP 'desktopkit-windows-zip-verify'
+          Remove-Item $verifyDir -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath $verifyDir -Force
+          if (-not (Get-ChildItem $verifyDir -File | Where-Object { $_.Extension -eq '.exe' })) {
+            throw 'Windows release zip does not contain an executable'
+          }
+
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $([IO.Path]::GetFileName($zip))" | Set-Content -NoNewline "$zip.sha256"
 
       - name: Generate checksums (Unix)
         if: runner.os != 'Windows'
