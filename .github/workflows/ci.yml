@@ -218,3 +218,56 @@ jobs:
             cd "$root/dist"
             sha256sum --check ./*.sha256
           )
+
+  windows-installer-workflow:
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/wails-desktop.yml
+    with:
+      app-name: desktopkit-workflow-smoke
+      desktop-dir: .github/wails-installer-smoke
+      desktopkit-cli-version: ${{ github.sha }}
+      build-windows: true
+      build-linux: false
+      build-macos: false
+      windows-installer: true
+      windows-install-scope: user
+      windows-product-name: Desktop Kit Workflow Smoke
+      windows-publisher: Desktop Kit CI
+      windows-app-id: desktopkit-workflow-smoke
+      test-command: ""
+      vet-command: ""
+      publish-release: false
+
+  verify-windows-installer-workflow:
+    if: github.event_name != 'pull_request'
+    needs: windows-installer-workflow
+    runs-on: windows-latest
+    steps:
+      - name: Download Windows workflow artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: desktopkit-workflow-smoke-windows-amd64
+          path: dist
+
+      - name: Verify portable, setup and zip artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $base = 'desktopkit-workflow-smoke-windows-amd64'
+          $portable = Join-Path dist "$base.exe"
+          $setup = Join-Path dist "$base-setup.exe"
+          $zip = Join-Path dist "$base.zip"
+          foreach ($path in @($portable, $setup, $zip)) {
+            if (-not (Test-Path $path)) { throw "missing artifact: $path" }
+            $checksum = "$path.sha256"
+            if (-not (Test-Path $checksum)) { throw "missing checksum: $checksum" }
+            $expected = ((Get-Content $checksum -Raw).Trim() -split "\s+")[0]
+            $actual = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($expected -ne $actual) { throw "checksum mismatch: $path" }
+          }
+
+          $extract = Join-Path $env:RUNNER_TEMP 'desktopkit-workflow-zip-verify'
+          Remove-Item $extract -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath $extract -Force
+          if (-not (Test-Path (Join-Path $extract "$base.exe"))) { throw "portable exe missing from zip" }
+          if (Get-ChildItem $extract -File | Where-Object { $_.Name -like "*-setup.exe" }) { throw "setup exe must not be nested in portable zip" }

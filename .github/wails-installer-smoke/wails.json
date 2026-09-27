@@ -1,0 +1,6 @@
+{
+  "name": "desktopkit-workflow-smoke",
+  "outputfilename": "desktopkit-workflow-smoke",
+  "frontend:dir": "frontend",
+  "wailsjsdir": "frontend/wailsjs"
+}
