@@ -30,7 +30,7 @@ func TestPackageWindowsBuildsSetupFromExistingExecutable(t *testing.T) {
 		for _, want := range []string{
 			"RequestExecutionLevel user",
 			"InstallDir \"$LOCALAPPDATA\\Programs\\${PRODUCT_NAME}\"",
-			"File /oname=\"${APP_EXE}\"",
+			"File /oname=${APP_EXE}",
 			"WriteRegStr HKCU",
 			"CreateShortcut \"$SMPROGRAMS\\${PRODUCT_NAME}\\${PRODUCT_NAME}.lnk\"",
 		} {

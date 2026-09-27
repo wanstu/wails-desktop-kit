@@ -283,7 +283,7 @@ Section "Install"
   {{if eq .InstallScope "user"}}SetShellVarContext current{{else}}SetShellVarContext all
   SetRegView 64{{end}}
   SetOutPath "$INSTDIR"
-  File /oname="${APP_EXE}" "{{.Input}}"
+  File /oname=${APP_EXE} "{{.Input}}"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
   {{if .StartMenuShortcut}}CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
