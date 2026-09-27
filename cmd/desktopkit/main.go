@@ -17,6 +17,7 @@ Usage:
   desktopkit icon generate [options]
   desktopkit icon prepare-wails [options]
   desktopkit package linux [options]
+  desktopkit package windows [options]
   desktopkit buildmeta prepare [options]
   desktopkit doctor [options]
   desktopkit upgrade [options]
@@ -26,6 +27,7 @@ Commands:
   icon generate     Generate a deterministic Kit family icon without system fonts.
   icon prepare-wails Prepare build/appicon.png and invalidate generated Windows ICO.
   package linux     Stage Linux release artifacts (raw, deb, tar.gz) and SHA256 files.
+  package windows   Build an NSIS installer from an already-built Windows executable.
   buildmeta prepare Inject release version into Wails metadata and frontend build info.
   doctor            Inspect Kit/Wails/workflow version drift in a consumer repository.
   upgrade           Update Kit module/workflow references in a consumer repository.
@@ -169,11 +171,13 @@ func runIconGenerate(args []string) error {
 
 func runPackage(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("package target is required (supported: linux)")
+		return fmt.Errorf("package target is required (supported: linux, windows)")
 	}
 	switch args[0] {
 	case "linux":
 		return runPackageLinux(args[1:])
+	case "windows":
+		return runPackageWindows(args[1:])
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 		return nil
@@ -240,5 +244,49 @@ func runPackageLinux(args []string) error {
 	for _, artifact := range artifacts {
 		fmt.Printf("%s  %s  %s\n", artifact.Format, artifact.SHA256, artifact.Path)
 	}
+	return nil
+}
+
+func runPackageWindows(args []string) error {
+	flags := flag.NewFlagSet("desktopkit package windows", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+
+	var request kitpackaging.WindowsRequest
+	flags.StringVar(&request.Input, "input", "", "already-built Windows executable path")
+	flags.StringVar(&request.OutputDir, "dist", "dist", "output directory")
+	flags.StringVar(&request.AppName, "app-name", "", "installed executable name, without .exe")
+	flags.StringVar(&request.AssetBase, "asset-base", "", "release filename prefix, without platform suffix")
+	flags.StringVar(&request.PackageVersion, "package-version", "0.0.0", "display version, usually tag without leading v")
+	flags.StringVar(&request.Architecture, "arch", "amd64", "Windows architecture: amd64 or arm64")
+	flags.StringVar(&request.InstallScope, "install-scope", "user", "install scope: user or machine")
+	flags.StringVar(&request.ProductName, "product-name", "", "display product name (defaults to app-name)")
+	flags.StringVar(&request.Publisher, "publisher", "Unknown", "Windows publisher/company display name")
+	flags.StringVar(&request.AppID, "app-id", "", "stable uninstall registry id (defaults to app-name)")
+	flags.StringVar(&request.IconFile, "icon", "", "optional .ico installer icon")
+	flags.BoolVar(&request.StartMenuShortcut, "start-menu-shortcut", true, "create Start Menu shortcuts")
+	flags.BoolVar(&request.DesktopShortcut, "desktop-shortcut", false, "create a desktop shortcut")
+	flags.StringVar(&request.NSISPath, "nsis", "", "makensis executable path (defaults to PATH lookup)")
+
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if flags.NArg() != 0 {
+		return fmt.Errorf("unexpected arguments: %v", flags.Args())
+	}
+	if request.Input == "" {
+		return fmt.Errorf("--input is required")
+	}
+	if request.AppName == "" {
+		return fmt.Errorf("--app-name is required")
+	}
+	if request.AssetBase == "" {
+		request.AssetBase = request.AppName
+	}
+
+	artifact, err := kitpackaging.PackageWindows(request)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s  %s  %s\n", artifact.Format, artifact.SHA256, artifact.Path)
 	return nil
 }
