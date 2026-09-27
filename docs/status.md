@@ -2,13 +2,13 @@
 
 [返回首页](../README.md) · [本轮修复](runtime-hardening.md) · [FRP 接入记录](frp-migration.md)
 
-核对日期：**2026-09-19**。本页区分基础库已发布能力、本轮修复分支、自动验证与尚未进行的验收。
+核对日期：**2026-09-27**。本页区分已发布能力、当前 RC、自动验证与下一阶段工作。
 
 ## 当前结论
 
-第一阶段公共抽象已经可用，FRP 已实际复用 Runtime／tray／autostart／CI。Review 后的关键修复已提交推送，Kit 和 FRP 的三平台 CI 全绿。
+Kit 的 Runtime、Theme、配置、安全存储、Build Metadata 与三平台 Packaging 基线已经可用。当前发布目标为 **Kit v0.10.0-rc.1**，本轮把 Windows 安装从“只有 portable exe”提升为 Kit 一等能力。
 
-当前发布目标为 **Kit v0.6.0**。v0.6.0 在 Runtime Theme 与 v0.5.1 `.deb` 基础上新增 Packaging Pipeline：`desktopkit package linux` 内置 raw / deb / tar.gz、统一 SHA256、Debian desktop/icon 安装与 reusable workflow post-package hook。后续 AppImage、DMG、MSI 等复杂格式可以先通过 hook 接入，再逐步升级为 Kit 一等 builder，而不需要重写 Release 汇总逻辑。
+Windows Installer v1 已完成：`desktopkit package windows` 直接包装业务已经构建好的 exe，不二次执行 `wails build`；reusable workflow 可同时产出 Portable EXE、NSIS Setup、Portable ZIP 与 SHA256。默认 user scope，支持 machine scope、开始菜单／桌面快捷方式、Windows 卸载注册、`/S` 静默安装与卸载，并明确不递归删除业务 AppData／数据库等持久数据。下一阶段在 RC 被真实消费者验证后进入 Updater。
 
 ## 已完成的工作
 
@@ -21,7 +21,7 @@
 | 配置路径 | 跨平台统一 XDG / `~/.config/<app-id>` 路径 API，不自动迁移旧消费者 |
 | Secure Config | 系统凭据库托管随机主密钥；AES-256-GCM 加密 Secret/JSON，无明文降级 |
 | Runtime Theme | 4 个内置 fallback；远程主题整包同步、SHA-256 校验、共享缓存、完整快照与离线恢复 |
-| 构建工程 | Windows／Linux／macOS 并行 reusable workflow、wrapper、Packaging Pipeline、通用 post-package hook、SHA256、可选 Release |
+| 构建工程 | Windows／Linux／macOS 并行 reusable workflow、wrapper、Linux raw/deb/tar.gz、Windows NSIS Setup、Portable/Setup/ZIP、通用 post-package hook、SHA256、可选 Release |
 | 本轮 Runtime 修复 | macOS 主循环整合、托盘就绪／故障恢复、窗口并发保护、业务动作串行化 |
 | 本轮接口与边界 | BeforeClose／SecondInstance／TrayError／AutoStartProvider，Linux quoting、UI FS、图标限制、Release 产物范围 |
 | FRP 消费者 | 从自有桌面基础设施迁入 Kit；修复分支切换 HideSafe、固定公共依赖和 workflow SHA |
@@ -33,7 +33,7 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 
 | 验证 | 结果／证据 | 能说明什么 |
 | --- | --- | --- |
-| Kit 三平台 CI | [35371836841](https://github.com/wanstu/wails-desktop-kit/actions/runs/35371836841)，全部通过 | 三个平台的测试与 vet；新增 macOS 运行检查 |
+| Kit v0.10.0 RC 三平台 + Installer E2E CI | [36323530206](https://github.com/wanstu/wails-desktop-kit/actions/runs/36323530206)，全部通过 | Windows/Linux/macOS 测试与 vet；Windows 真实 NSIS 静默安装/卸载；reusable workflow 实际生成并重新下载校验 Portable EXE / Setup EXE / ZIP / SHA256 |
 | Windows 本地 | race／vet、production WebView2＋托盘启动退出通过 | 并发回归用例与一次真实原生生命周期 |
 | Debian 13 容器 | WebKit 4.1 下 race 全通过；gio 启动参数测试通过 | Linux 编译／测试和实际 desktop Exec 解析 |
 | macOS 运行检查 | Kit CI 的 production WebView＋托盘 smoke 通过 | 共用主循环下的一次启动和退出 |
@@ -47,10 +47,10 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 
 | 顺序 | 工作 | 完成标准 |
 | --- | --- | --- |
-| 1 | 真实桌面回归 | 三平台菜单顺序、显示／隐藏、关闭、重复启动；无可见宿主的 Linux 不丢窗口 |
-| 2 | 自启动与 FRP 业务验收 | 登录启动、路径移动后重新启用；多 Profile，以及保留／停止 frpc 两种退出 |
-| 3 | Review 与合并 | Kit 和 FRP 两个 PR 审查、处理结论并合并 |
-| 4 | 版本与发布验收 | 选择新版本，验证消费者真实 tag Release、文件名／校验和／权限及下载运行，再完成正式版本切换 |
+| 1 | 发布 v0.10.0-rc.1 | 固定当前 Installer 代码与 reusable workflow，让真实消费者可按 tag 引用 |
+| 2 | Know Me 消费者验收 | 使用 RC workflow 生成真实 Know Me Windows Setup，安装／覆盖升级／卸载，确认数据目录不受影响 |
+| 3 | 正式 v0.10.0 | RC 验收通过后将默认 helper / 文档切到 v0.10.0 并发布正式 tag |
+| 4 | Updater | 先实现 Check / Download / Verify，再接 Windows Setup 的 Install / Restart；Portable 不直接自覆盖 |
 
 PR：
 - [Kit：桌面生命周期与跨平台边界修复](https://github.com/wanstu/wails-desktop-kit/pull/1)
@@ -66,8 +66,9 @@ PR：
 | AI Dev Manager | 未接入 | 验证后台服务退出选择、设置通知及复杂构建 wrapper |
 | CodexPro+ | 未接入 | 验证第二次启动行为、额外 core build 和资源流程 |
 | StatusNotifier host 探测 | 未实现 | 区分注册与可见宿主；宿主消失后的恢复与桌面兼容性 |
-| 共享 build/package CLI | 已实现基础 | `desktopkit package linux` 已支持 raw / deb / tar.gz；后续按消费者需求扩展 Windows/macOS 一等格式 |
-| deb／安装包抽象 | 已实现基础 | pure-Go `.deb`、desktop file、icon、依赖元数据与 SHA256；后续补升级/卸载脚本与更多策略 |
+| 共享 build/package CLI | Windows/Linux 已实现 | `desktopkit package linux` 支持 raw / deb / tar.gz；`desktopkit package windows` 支持基于现成 exe 的 NSIS Setup |
+| Windows Installer | RC 完成 | user/machine scope、静默安装/卸载、卸载注册、快捷方式、覆盖升级基础与 E2E CI；待 Know Me 真实消费者验收 |
+| Updater | 下一阶段 | GitHub Release provider 起步，Check / Download / SHA256 Verify / Windows Install / Restart；保持 provider 可替换 |
 | AppImage / DMG / MSI | 扩展点已就绪 | 当前用 post-package hook；成熟后升级为 Kit 内置 builder |
 | macOS signing/notarization | 未实现 | 签名、公证及正式分发验证 |
 

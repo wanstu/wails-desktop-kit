@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.9.0
+## 安装 v0.10.0-rc.1
 
-本文对应 **v0.9.0**。本版补齐发布版本链：tag 自动注入 Wails / Windows 版本资源，提供 `desktopkit-build-info.json` 和统一 `<dk-about>` 组件，避免发布产物长期显示 Wails 默认 `1.0.0` 或应用内无法确认版本。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.10.0-rc.1**。本版新增 Windows Installer：`desktopkit package windows` 可以直接把已经构建好的 Wails exe 打成 NSIS Setup，不重复编译业务应用；reusable workflow 可同时发布 Portable EXE、Setup EXE、Portable ZIP 和 SHA256。默认采用 user scope，支持 `/S` 静默安装/卸载，并且卸载不会递归删除业务数据目录。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.9.0
+go get github.com/wanstu/wails-desktop-kit@v0.10.0-rc.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.9.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.10.0-rc.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.10.0-rc.1` | Windows NSIS Installer、user/machine scope、静默安装/卸载、Portable/Setup/ZIP 同步发布、真实安装/卸载与 reusable workflow E2E CI |
 | `v0.9.0` | Build Metadata/Windows 真实版本资源、`<dk-about>` 统一关于组件、Release tag 自动注入版本与 commit |
 | `v0.8.1` | 原生 Clipboard Runtime/前端 helper、安全随机 Secret、Roadmap；workflow 默认 packaging helper 同步到 v0.8.1 |
 | `v0.8.0` | 配置存储/迁移、重复启动策略、Runtime helper、可选平台 CI、doctor/upgrade、Wails 图标准备、多二进制 Linux Packaging |
@@ -79,8 +80,8 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`；显式文件/目录迁移原语 | 稳定 App ID 与迁移时机 |
 | `atomicfile` / `jsonstore` | 0600 原子替换、泛型 JSON Load/Save/Update、Normalize/Validate hook | 配置 schema、默认值和业务迁移版本 |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON；提供 `openssl rand` 等价的安全随机 Secret 生成 | Secret 的逻辑 key 与业务生命周期 |
-| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz、桌面文件、图标、多二进制安装、统一 SHA256 | 产品元数据、可选复杂格式 hook |
-| reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
+| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz；Windows NSIS Setup；桌面元数据、多二进制安装与统一 SHA256 | 产品元数据、稳定 Windows App ID、可选复杂格式 hook |
+| reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Windows Portable/Setup/ZIP、Linux Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
 
