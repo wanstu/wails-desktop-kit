@@ -28,12 +28,47 @@ on:
       desktopkit-cli-version:
         description: "Desktop Kit helper version used for package staging."
         required: false
-        default: "v0.9.0"
+        default: "v0.10.0"
         type: string
       build-windows:
         description: "Build the Windows amd64 desktop artifact."
         required: false
         default: true
+        type: boolean
+      windows-installer:
+        description: "Build an NSIS setup.exe from the already-built Windows executable."
+        required: false
+        default: false
+        type: boolean
+      windows-install-scope:
+        description: "Windows installer scope: user or machine."
+        required: false
+        default: "user"
+        type: string
+      windows-product-name:
+        description: "Windows installed-app display name. Empty uses app-name."
+        required: false
+        default: ""
+        type: string
+      windows-publisher:
+        description: "Windows installed-app publisher. Empty uses repository owner."
+        required: false
+        default: ""
+        type: string
+      windows-app-id:
+        description: "Stable Windows uninstall registry id. Empty uses app-name."
+        required: false
+        default: ""
+        type: string
+      windows-start-menu-shortcut:
+        description: "Create Start Menu shortcuts in the Windows installer."
+        required: false
+        default: true
+        type: boolean
+      windows-desktop-shortcut:
+        description: "Create a desktop shortcut in the Windows installer."
+        required: false
+        default: false
         type: boolean
       build-linux:
         description: "Build the Linux amd64 desktop artifact."
@@ -221,9 +256,34 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ inputs.wails-version }}
 
       - name: Install Desktop Kit packaging helper
-        if: runner.os == 'Linux'
-        shell: bash
+        if: runner.os == 'Linux' || (runner.os == 'Windows' && inputs.windows-installer)
         run: go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@${{ inputs.desktopkit-cli-version }}
+
+      - name: Install NSIS
+        if: runner.os == 'Windows' && inputs.windows-installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+          }
+          $nsis = Get-Command makensis.exe -ErrorAction SilentlyContinue
+          if (-not $nsis) {
+            $candidates = @(
+              "${env:ProgramFiles(x86)}\NSIS",
+              "${env:ProgramFiles}\NSIS"
+            )
+            foreach ($candidate in $candidates) {
+              if (Test-Path (Join-Path $candidate 'makensis.exe')) {
+                $candidate | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+                $env:PATH = "$candidate;$env:PATH"
+                break
+              }
+            }
+          }
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            throw 'NSIS installation completed but makensis.exe is still unavailable'
+          }
 
       - name: Prepare build metadata
         shell: bash
@@ -307,6 +367,56 @@ jobs:
           }
           $target = Join-Path 'dist' "$assetBase-windows-amd64.exe"
           Copy-Item $source $target -Force
+
+      - name: Package Windows installer
+        if: runner.os == 'Windows' && inputs.windows-installer
+        shell: pwsh
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+          ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          PRODUCT_NAME: ${{ inputs.windows-product-name }}
+          PUBLISHER: ${{ inputs.windows-publisher }}
+          APP_ID: ${{ inputs.windows-app-id }}
+          INSTALL_SCOPE: ${{ inputs.windows-install-scope }}
+          START_MENU_SHORTCUT: ${{ inputs.windows-start-menu-shortcut }}
+          DESKTOP_SHORTCUT: ${{ inputs.windows-desktop-shortcut }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = Join-Path '${{ inputs.desktop-dir }}' 'build/bin/${{ inputs.app-name }}.exe'
+          if (-not (Test-Path $source)) { throw "Windows executable not found: $source" }
+
+          $assetBase = $env:APP_NAME
+          $version = '0.0.0-dev'
+          if ($env:ASSET_VERSION) {
+            $assetBase = "$assetBase-$($env:ASSET_VERSION)"
+            $version = $env:ASSET_VERSION -replace '^v', ''
+          }
+          $productName = if ($env:PRODUCT_NAME) { $env:PRODUCT_NAME } else { $env:APP_NAME }
+          $publisher = if ($env:PUBLISHER) { $env:PUBLISHER } else { $env:REPOSITORY_OWNER }
+          $appID = if ($env:APP_ID) { $env:APP_ID } else { $env:APP_NAME }
+
+          $args = @(
+            'package', 'windows',
+            '--input', $source,
+            '--dist', 'dist',
+            '--app-name', $env:APP_NAME,
+            '--asset-base', $assetBase,
+            '--package-version', $version,
+            '--arch', 'amd64',
+            '--install-scope', $env:INSTALL_SCOPE,
+            '--product-name', $productName,
+            '--publisher', $publisher,
+            '--app-id', $appID,
+            "--start-menu-shortcut=$($env:START_MENU_SHORTCUT)",
+            "--desktop-shortcut=$($env:DESKTOP_SHORTCUT)"
+          )
+
+          $icon = Join-Path '${{ inputs.desktop-dir }}' 'build/windows/icon.ico'
+          if (Test-Path $icon) {
+            $args += @('--icon', $icon)
+          }
+          desktopkit @args
 
       - name: Stage Linux release files
         if: runner.os == 'Linux'
@@ -424,7 +534,7 @@ jobs:
           ASSET_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $payload = @(Get-ChildItem dist -File | Where-Object { $_.Name -notlike '*.sha256' -and $_.Name -notlike '*.zip' })
+          $payload = @(Get-ChildItem dist -File | Where-Object { $_.Name -notlike '*.sha256' -and $_.Name -notlike '*.zip' -and $_.Name -notlike '*-setup.exe' })
           if (-not $payload) { throw 'No Windows release payload found for zip' }
           $checksums = @()
           foreach ($file in $payload) {

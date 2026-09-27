@@ -80,6 +80,72 @@ jobs:
         run: go run -tags production ./.github/smokeapp
         timeout-minutes: 2
 
+      - name: Windows installer smoke
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+          }
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            $candidates = @(
+              "${env:ProgramFiles(x86)}\NSIS",
+              "${env:ProgramFiles}\NSIS"
+            )
+            foreach ($candidate in $candidates) {
+              if (Test-Path (Join-Path $candidate 'makensis.exe')) {
+                $env:PATH = "$candidate;$env:PATH"
+                break
+              }
+            }
+          }
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            throw 'makensis.exe is unavailable'
+          }
+
+          $root = Join-Path $env:RUNNER_TEMP 'desktopkit-windows-installer-smoke'
+          Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'dist') | Out-Null
+
+          $input = Join-Path $root 'desktopkit-smoke.exe'
+          go build -o $input ./cmd/desktopkit
+
+          go run ./cmd/desktopkit package windows `
+            --input $input `
+            --dist (Join-Path $root 'dist') `
+            --app-name desktopkit-smoke `
+            --asset-base desktopkit-smoke-v0.0.0 `
+            --package-version 0.0.0 `
+            --product-name "Desktop Kit Packaging Smoke" `
+            --publisher "Desktop Kit CI" `
+            --app-id "desktopkit-smoke" `
+            --install-scope user
+
+          $setup = Join-Path $root 'dist\desktopkit-smoke-v0.0.0-windows-amd64-setup.exe'
+          if (-not (Test-Path $setup)) { throw "setup not created: $setup" }
+          if (-not (Test-Path "$setup.sha256")) { throw "setup checksum not created" }
+
+          $expectedHash = ((Get-Content "$setup.sha256" -Raw).Trim() -split '\s+')[0]
+          $actualHash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($expectedHash -ne $actualHash) { throw "setup checksum mismatch" }
+
+          $installDir = Join-Path $env:LOCALAPPDATA 'Programs\Desktop Kit Packaging Smoke'
+          Remove-Item $installDir -Recurse -Force -ErrorAction SilentlyContinue
+          $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\desktopkit-smoke'
+          Remove-Item $uninstallKey -Recurse -Force -ErrorAction SilentlyContinue
+
+          $install = Start-Process -FilePath $setup -ArgumentList '/S' -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "silent install failed: $($install.ExitCode)" }
+          if (-not (Test-Path (Join-Path $installDir 'desktopkit-smoke.exe'))) { throw 'installed executable missing' }
+          if (-not (Test-Path $uninstallKey)) { throw 'uninstall registry key missing' }
+
+          $uninstaller = Join-Path $installDir 'Uninstall.exe'
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "silent uninstall failed: $($uninstall.ExitCode)" }
+          Start-Sleep -Milliseconds 500
+          if (Test-Path (Join-Path $installDir 'desktopkit-smoke.exe')) { throw 'installed executable remained after uninstall' }
+
       - name: Vet
         run: go vet ./...
 
