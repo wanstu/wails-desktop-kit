@@ -104,10 +104,14 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.9.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.10.0
     with:
       app-name: desktop-demo
       desktop-dir: .
+      windows-installer: true
+      windows-install-scope: user
+      windows-product-name: Desktop Demo
+      windows-publisher: Example Corp
       linux-package-formats: raw,deb,tar.gz
       linux-package-description: Desktop Demo
       linux-desktop-file: packaging/desktop-demo.desktop
@@ -132,8 +136,15 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.9.0` | Packaging helper 版本 |
+| `desktopkit-cli-version` | `v0.10.0` | Packaging helper 版本 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
+| `windows-installer` | `false` | 是否额外生成 NSIS `*-setup.exe`；不影响 portable exe |
+| `windows-install-scope` | `user` | `user` 安装到 LocalAppData，不需要 UAC；`machine` 安装到 Program Files |
+| `windows-product-name` | 空 | Windows“已安装的应用”显示名；空时使用 app-name |
+| `windows-publisher` | 空 | Publisher；空时使用 GitHub 仓库 owner |
+| `windows-app-id` | 空 | 稳定卸载注册表 ID；空时使用 app-name |
+| `windows-start-menu-shortcut` | `true` | 是否创建开始菜单快捷方式 |
+| `windows-desktop-shortcut` | `false` | 是否创建桌面快捷方式 |
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
 | `build-command-windows` | 空 | Windows 产品 wrapper |
@@ -157,6 +168,53 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `publish-release` | `false` | 是否允许进入 tag Release 发布 |
 
 `linux-deb` 与 `linux-deb-description` 进入兼容模式，新项目优先使用 `linux-package-formats` 与 `linux-package-description`。v0.5.2 已热修旧 `.deb` control 换行；已有 caller 继续兼容。v0.8.0 起平台集合由三个 `build-*` 输入决定，Windows-only 或 Linux-only 产品不再需要复制整套 workflow。
+
+### Windows Installer
+
+v0.10.0 起，Kit 可以把产品已经构建并验证过的 Windows exe 包成 NSIS 安装器，而不是为了生成 setup 再执行一遍 `wails build`。这点对带自定义 wrapper / ldflags / commit 注入的产品很重要：Portable 与 Setup 内部使用的是同一个二进制。
+
+启用：
+
+~~~yaml
+      windows-installer: true
+      windows-install-scope: user
+      windows-product-name: Desktop Demo
+      windows-publisher: Example Corp
+      windows-app-id: desktop-demo
+~~~
+
+tag `v1.2.3` 的 Windows Release 会同时包含：
+
+~~~text
+desktop-demo-v1.2.3-windows-amd64.exe
+desktop-demo-v1.2.3-windows-amd64-setup.exe
+desktop-demo-v1.2.3-windows-amd64.zip
+~~~
+
+三者均生成 SHA256。zip 只归档 portable exe 与对应校验，不把 setup 再嵌套进去。
+
+默认 `windows-install-scope: user`，安装目录为 `%LocalAppData%\Programs\<ProductName>`，正常安装与后续静默升级不要求管理员权限。`machine` 模式使用 Program Files 并要求管理员权限，适合需要系统级安装的产品。
+
+安装器支持 NSIS 标准 `/S` 静默安装，卸载器同样支持 `/S`。这为后续 Kit Updater 的 `Download -> Verify -> Install -> Restart` 留出了稳定接口。
+
+Kit 安装器只管理它安装的 exe、快捷方式、卸载器与卸载注册表项。卸载不会递归清理 AppData、`~/.config`、数据库、上传目录等业务数据；业务应用也不应把持久数据存进安装目录。覆盖安装使用同一个 `windows-app-id` 时即为升级，因此这个 ID 发布后应保持稳定。
+
+也可以绕过 reusable workflow，直接对现成 exe 打包：
+
+~~~powershell
+desktopkit package windows `
+  --input .\build\bin\desktop-demo.exe `
+  --dist .\dist `
+  --app-name desktop-demo `
+  --asset-base desktop-demo-v1.2.3 `
+  --package-version 1.2.3 `
+  --product-name "Desktop Demo" `
+  --publisher "Example Corp" `
+  --app-id desktop-demo `
+  --install-scope user
+~~~
+
+本地直接调用该命令需要系统可找到 `makensis.exe`；GitHub reusable workflow 在启用 `windows-installer` 后会自动准备 NSIS。
 
 ### 更复杂格式的扩展点
 
