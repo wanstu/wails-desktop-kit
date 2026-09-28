@@ -6,7 +6,7 @@
 
 ## 当前结论
 
-Kit 的 Runtime、Theme、配置、安全存储、Build Metadata 与三平台 Packaging 基线已经可用。**Kit v0.10.0** 已完成发布收口，本轮把 Windows 安装从“只有 portable exe”提升为 Kit 一等能力。
+Kit 的 Runtime、Theme、配置、安全存储、Build Metadata 与三平台 Packaging 基线已经可用。稳定版 **v0.10.0** 已完成 Windows Installer 收口；当前发布目标为 **v0.11.0-rc.1**，本轮把 Updater 从 Check / Download / Verify 推进到 Windows user-scope Install / Restart。
 
 Windows Installer v1 已完成：`desktopkit package windows` 直接包装业务已经构建好的 exe，不二次执行 `wails build`；reusable workflow 可同时产出 Portable EXE、NSIS Setup、Portable ZIP 与 SHA256。默认 user scope，支持 machine scope、开始菜单／桌面快捷方式、Windows 卸载注册、`/S` 静默安装与卸载，并明确不递归删除业务 AppData／数据库等持久数据。Know Me 已完成真实 Release、安装、运行、覆盖安装与卸载验收。
 
@@ -53,9 +53,9 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 
 | 顺序 | 工作 | 完成标准 |
 | --- | --- | --- |
-| 1 | Updater Windows E2E | CI 直接调用 `InstallAndRestart`，验证 user-scope 等待退出 / 覆盖 / 重启，以及 Portable 自动安装拒绝 |
-| 2 | Updater Core 收口 | 补齐错误边界、文档、跨平台测试并准备下一个 Kit RC |
-| 3 | Know Me 消费者接入 | About / 设置页接入“检查更新 → 下载 → 安装并重启”，Portable 只检查/下载 |
+| 1 | 发布 v0.11.0-rc.1 | 固定 Updater Core + Windows Install/Restart API，让真实消费者可按 tag 接入 |
+| 2 | Know Me 消费者接入 | About / 设置页接入“检查更新 → 下载 → 安装并重启”，Portable 只检查/下载 |
+| 3 | Know Me 更新 E2E | 用真实已安装版本验证发现新版、下载校验、退出、Setup 覆盖和重启 |
 | 4 | 其他消费者迁移 | ADM / SSH / FRP 按产品退出语义逐个接入，不一次性强推 |
 
 PR：

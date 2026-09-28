@@ -104,7 +104,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.10.0
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.0-rc.1
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -136,7 +136,7 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.10.0` | Packaging helper 版本 |
+| `desktopkit-cli-version` | `v0.11.0-rc.1` | Packaging helper 版本；当前 RC 与 reusable workflow 同步固定 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `windows-installer` | `false` | 是否额外生成 NSIS `*-setup.exe`；不影响 portable exe |
 | `windows-install-scope` | `user` | `user` 安装到 LocalAppData，不需要 UAC；`machine` 安装到 Program Files |
