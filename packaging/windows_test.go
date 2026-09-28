@@ -33,6 +33,11 @@ func TestPackageWindowsBuildsSetupFromExistingExecutable(t *testing.T) {
 			"File /oname=${APP_EXE}",
 			"WriteRegStr HKCU",
 			"CreateShortcut \"$SMPROGRAMS\\${PRODUCT_NAME}\\${PRODUCT_NAME}.lnk\"",
+			"!include \"FileFunc.nsh\"",
+			`"/WAITPID="`,
+			"WaitForSingleObject",
+			`"/RESTART="`,
+			`Exec '"$INSTDIR\${APP_EXE}"'`,
 		} {
 			if !strings.Contains(text, want) {
 				t.Fatalf("installer script missing %q:\n%s", want, text)
@@ -104,6 +109,9 @@ func TestWindowsInstallerMachineScopeAndOptionalDesktopShortcut(t *testing.T) {
 		if !strings.Contains(text, want) {
 			t.Fatalf("installer script missing %q:\n%s", want, text)
 		}
+	}
+	if strings.Contains(text, `Exec '"$INSTDIR\${APP_EXE}"'`) {
+		t.Fatalf("machine-scope installer must not restart app elevated:\n%s", text)
 	}
 }
 

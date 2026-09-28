@@ -247,6 +247,7 @@ func writeWindowsInstallerScript(path string, data windowsTemplateData) error {
 var windowsInstallerTemplate = template.Must(template.New("windows-installer").Parse(`Unicode true
 SetCompressor /SOLID lzma
 !include "MUI2.nsh"
+!include "FileFunc.nsh"
 
 !define APP_EXE "{{.AppExe}}"
 !define APP_ID "{{.AppID}}"
@@ -278,6 +279,29 @@ InstallDir "$PROGRAMFILES64\${PUBLISHER}\${PRODUCT_NAME}"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 
+Var DesktopKitRestartAfterInstall
+
+Function .onInit
+  ${GetParameters} $0
+
+  ${GetOptions} $0 "/WAITPID=" $1
+  StrCmp $1 "" desktopkit_wait_done
+  System::Call 'kernel32::OpenProcess(i 0x00100000, i 0, i r1) i .r2'
+  StrCmp $2 0 desktopkit_wait_done
+  System::Call 'kernel32::WaitForSingleObject(i r2, i 120000) i .r3'
+  System::Call 'kernel32::CloseHandle(i r2)'
+  StrCmp $3 0 desktopkit_wait_done
+  SetErrorLevel 2
+  Quit
+
+desktopkit_wait_done:
+  ${GetOptions} $0 "/RESTART=" $1
+  StrCmp $1 "1" 0 desktopkit_init_done
+  StrCpy $DesktopKitRestartAfterInstall "1"
+
+desktopkit_init_done:
+FunctionEnd
+
 Section "Install"
   SetOverwrite on
   {{if eq .InstallScope "user"}}SetShellVarContext current{{else}}SetShellVarContext all
@@ -300,6 +324,10 @@ Section "Install"
   {{if eq .InstallScope "user"}}WriteRegStr HKCU{{else}}WriteRegStr HKLM{{end}} "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
   {{if eq .InstallScope "user"}}WriteRegDWORD HKCU{{else}}WriteRegDWORD HKLM{{end}} "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "NoModify" 1
   {{if eq .InstallScope "user"}}WriteRegDWORD HKCU{{else}}WriteRegDWORD HKLM{{end}} "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "NoRepair" 1
+
+  {{if eq .InstallScope "user"}}StrCmp $DesktopKitRestartAfterInstall "1" 0 desktopkit_install_done
+  Exec '"$INSTDIR\${APP_EXE}"'
+desktopkit_install_done:{{end}}
 SectionEnd
 
 Section "Uninstall"
