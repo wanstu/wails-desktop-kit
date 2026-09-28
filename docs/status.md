@@ -38,6 +38,7 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 | Kit v0.10.0 Installer E2E CI | [36323530206](https://github.com/wanstu/wails-desktop-kit/actions/runs/36323530206)，全部通过 | Windows/Linux/macOS 测试与 vet；Windows 真实 NSIS 静默安装/卸载；reusable workflow 实际生成并重新下载校验 Portable EXE / Setup EXE / ZIP / SHA256 |
 | Know Me 真实消费者 | [36326162758](https://github.com/wanstu/know_me/actions/runs/36326162758)，`v0.1.6-rc.4` Release 全绿 | 真实产品 wrapper 生成 Setup；本机 user-scope 安装成功；安装 exe 与 Portable SHA256 一致；运行数据落 `~/.config/know-me`；覆盖安装保留数据；静默卸载删除程序/快捷方式/注册表但保留用户数据 |
 | Know Me 正式 Kit workflow | [36401768004](https://github.com/wanstu/know_me/actions/runs/36401768004)，`v0.1.6-rc.5` Release 全绿 | `wails-desktop-kit@v0.10.0` workflow/helper 可被真实消费者解析，Windows NSIS Setup 正常生成并进入 Release |
+| Updater 真实 Release Check | 2026-09-28 对 Know Me GitHub Releases 只读验收 | prerelease 渠道正确识别 `v0.1.6-rc.4 -> v0.1.6-rc.5`、选择 Windows Setup 并读取 GitHub SHA256 digest；stable 渠道从 `v0.1.5` 保持无更新且忽略 rc.5 |
 | Windows 本地 | race／vet、production WebView2＋托盘启动退出通过 | 并发回归用例与一次真实原生生命周期 |
 | Debian 13 容器 | WebKit 4.1 下 race 全通过；gio 启动参数测试通过 | Linux 编译／测试和实际 desktop Exec 解析 |
 | macOS 运行检查 | Kit CI 的 production WebView＋托盘 smoke 通过 | 共用主循环下的一次启动和退出 |
