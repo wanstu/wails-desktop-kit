@@ -109,7 +109,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path (Join-Path $root 'dist') | Out-Null
 
           $input = Join-Path $root 'desktopkit-smoke.exe'
-          go build -o $input ./cmd/desktopkit
+          go build -o $input ./.github/updater-installation-smoke
 
           go run ./cmd/desktopkit package windows `
             --input $input `
@@ -137,8 +137,20 @@ jobs:
 
           $install = Start-Process -FilePath $setup -ArgumentList '/S' -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "silent install failed: $($install.ExitCode)" }
-          if (-not (Test-Path (Join-Path $installDir 'desktopkit-smoke.exe'))) { throw 'installed executable missing' }
+          $installedExe = Join-Path $installDir 'desktopkit-smoke.exe'
+          if (-not (Test-Path $installedExe)) { throw 'installed executable missing' }
           if (-not (Test-Path $uninstallKey)) { throw 'uninstall registry key missing' }
+
+          $installedState = (& $installedExe | ConvertFrom-Json)
+          if ($installedState.Mode -ne 'user') { throw "installed probe mode was $($installedState.Mode)" }
+          if ($installedState.InstallDir -ne $installDir) { throw "installed probe dir was $($installedState.InstallDir)" }
+          if (-not $installedState.Uninstaller) { throw 'installed probe did not expose uninstaller' }
+
+          $portableCopy = Join-Path $root 'desktopkit-smoke-portable.exe'
+          Copy-Item $installedExe $portableCopy -Force
+          $portableState = (& $portableCopy | ConvertFrom-Json)
+          if ($portableState.Mode -ne 'portable') { throw "portable copy mode was $($portableState.Mode)" }
+          if ($portableState.InstallDir) { throw "portable copy unexpectedly reported install dir $($portableState.InstallDir)" }
 
           $uninstaller = Join-Path $installDir 'Uninstall.exe'
           $uninstall = Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait -PassThru
