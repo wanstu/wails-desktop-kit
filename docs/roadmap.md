@@ -39,14 +39,14 @@
 
 v0.10.0 先完成 Windows Installer：Kit 对已经构建好的 exe 生成 NSIS setup，不重复编译业务应用；默认 user scope，支持静默安装/卸载、覆盖升级、开始菜单/桌面快捷方式与“已安装的应用”注册，并保持业务数据目录不受卸载影响。
 
-Installer 稳定后进入 Updater，边界拆为四步：
+Updater 拆为四步：
 
-1. `Check`：比较当前版本与 Release 元数据。
-2. `Download`：下载当前平台对应 setup，并支持进度与取消。
-3. `Verify`：强制校验 SHA256；校验失败不得进入安装。
-4. `Install`：Windows 调用已验证的 setup 静默升级，当前应用退出后由安装器替换文件，完成后重新启动。
+1. `Check`：**已完成**。比较当前版本与 Release 元数据，支持稳定版 / prerelease 语义版本顺序。
+2. `Download`：**已完成 Core**。下载选定资产，支持进度与 context 取消。
+3. `Verify`：**已完成 Core**。强制校验 SHA256；GitHub asset digest 优先，缺失时使用同名 `.sha256` sidecar，失败不发布最终文件。
+4. `Install`：下一阶段。Windows 调用已验证的 setup 静默升级，当前应用退出后由安装器替换文件，完成后重新启动。
 
-第一阶段 updater 只做 GitHub Release provider；接口保持 provider 可替换，避免业务应用绑定 GitHub。Portable 运行模式可以检查/下载，但只有已安装实例才默认展示“安装并重启”；Portable 不直接尝试自覆盖正在运行的 exe。
+Updater Core 已保持 Provider 可替换，当前内置 GitHub Release provider；消费者也可以接自建更新源。Portable 运行模式可以检查/下载，但只有已安装实例才应该提供“安装并重启”；Portable 不直接尝试自覆盖正在运行的 exe。
 
 ## 中期：securetransport
 

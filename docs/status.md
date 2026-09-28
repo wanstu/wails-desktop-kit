@@ -8,7 +8,9 @@
 
 Kit 的 Runtime、Theme、配置、安全存储、Build Metadata 与三平台 Packaging 基线已经可用。**Kit v0.10.0** 已完成发布收口，本轮把 Windows 安装从“只有 portable exe”提升为 Kit 一等能力。
 
-Windows Installer v1 已完成：`desktopkit package windows` 直接包装业务已经构建好的 exe，不二次执行 `wails build`；reusable workflow 可同时产出 Portable EXE、NSIS Setup、Portable ZIP 与 SHA256。默认 user scope，支持 machine scope、开始菜单／桌面快捷方式、Windows 卸载注册、`/S` 静默安装与卸载，并明确不递归删除业务 AppData／数据库等持久数据。Know Me 已完成真实 Release、安装、运行、覆盖安装与卸载验收，下一阶段进入 Updater。
+Windows Installer v1 已完成：`desktopkit package windows` 直接包装业务已经构建好的 exe，不二次执行 `wails build`；reusable workflow 可同时产出 Portable EXE、NSIS Setup、Portable ZIP 与 SHA256。默认 user scope，支持 machine scope、开始菜单／桌面快捷方式、Windows 卸载注册、`/S` 静默安装与卸载，并明确不递归删除业务 AppData／数据库等持久数据。Know Me 已完成真实 Release、安装、运行、覆盖安装与卸载验收。
+
+Updater Core 的 Check / Download / Verify 已完成首版：Provider 抽象、GitHub Releases、语义版本比较、显式资产选择、下载进度 / context 取消、GitHub digest 或 sidecar SHA256 强制校验均已落地。当前还不会启动安装器或重启应用。
 
 ## 已完成的工作
 
@@ -35,6 +37,7 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 | --- | --- | --- |
 | Kit v0.10.0 Installer E2E CI | [36323530206](https://github.com/wanstu/wails-desktop-kit/actions/runs/36323530206)，全部通过 | Windows/Linux/macOS 测试与 vet；Windows 真实 NSIS 静默安装/卸载；reusable workflow 实际生成并重新下载校验 Portable EXE / Setup EXE / ZIP / SHA256 |
 | Know Me 真实消费者 | [36326162758](https://github.com/wanstu/know_me/actions/runs/36326162758)，`v0.1.6-rc.4` Release 全绿 | 真实产品 wrapper 生成 Setup；本机 user-scope 安装成功；安装 exe 与 Portable SHA256 一致；运行数据落 `~/.config/know-me`；覆盖安装保留数据；静默卸载删除程序/快捷方式/注册表但保留用户数据 |
+| Know Me 正式 Kit workflow | [36401768004](https://github.com/wanstu/know_me/actions/runs/36401768004)，`v0.1.6-rc.5` Release 全绿 | `wails-desktop-kit@v0.10.0` workflow/helper 可被真实消费者解析，Windows NSIS Setup 正常生成并进入 Release |
 | Windows 本地 | race／vet、production WebView2＋托盘启动退出通过 | 并发回归用例与一次真实原生生命周期 |
 | Debian 13 容器 | WebKit 4.1 下 race 全通过；gio 启动参数测试通过 | Linux 编译／测试和实际 desktop Exec 解析 |
 | macOS 运行检查 | Kit CI 的 production WebView＋托盘 smoke 通过 | 共用主循环下的一次启动和退出 |
@@ -48,10 +51,10 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 
 | 顺序 | 工作 | 完成标准 |
 | --- | --- | --- |
-| 1 | 正式 v0.10.0 | 默认 helper / 文档固定正式 tag，发布稳定版本 |
-| 2 | Know Me 切正式 Kit | 从 `v0.10.0-rc.1` workflow 切到 `v0.10.0`，保留 Windows Setup 为必需 Release 资产 |
-| 3 | Updater Core | 实现版本比较、Release provider、下载、SHA256 Verify；不直接操作 GUI |
-| 4 | Windows 自动更新 | 已安装实例调用 Setup 静默升级并重启；Portable 只检查/下载，不直接自覆盖 |
+| 1 | Updater Core 验收 | 用真实 GitHub Release 元数据验证 Check / 资产选择 / SHA256 来源；保持测试不安装任何程序 |
+| 2 | Windows 安装态识别 | 明确 installed / portable 状态与安装器路径能力，不依赖业务应用猜目录 |
+| 3 | Windows Install / Restart | 已安装实例调用已校验 Setup 静默升级；安全退出当前进程后重启 |
+| 4 | 消费者 UI | About / 设置页接入“检查更新 → 下载 → 安装并重启”，Portable 只检查/下载 |
 
 PR：
 - [Kit：桌面生命周期与跨平台边界修复](https://github.com/wanstu/wails-desktop-kit/pull/1)
@@ -69,7 +72,8 @@ PR：
 | StatusNotifier host 探测 | 未实现 | 区分注册与可见宿主；宿主消失后的恢复与桌面兼容性 |
 | 共享 build/package CLI | Windows/Linux 已实现 | `desktopkit package linux` 支持 raw / deb / tar.gz；`desktopkit package windows` 支持基于现成 exe 的 NSIS Setup |
 | Windows Installer | 已完成 | user/machine scope、静默安装/卸载、卸载注册、快捷方式、覆盖升级与 E2E CI；Know Me 真实消费者验收通过 |
-| Updater | 下一阶段 | GitHub Release provider 起步，Check / Download / SHA256 Verify / Windows Install / Restart；保持 provider 可替换 |
+| Updater Core | 首版完成 | Provider 抽象、GitHub Release provider、语义版本比较、资产选择、进度/取消、SHA256 强校验；待真实 Release 元数据验收 |
+| Windows 自动更新 | 下一阶段 | 识别安装态后接 Install / Exit / Restart；Portable 不直接自覆盖 |
 | AppImage / DMG / MSI | 扩展点已就绪 | 当前用 post-package hook；成熟后升级为 Kit 内置 builder |
 | macOS signing/notarization | 未实现 | 签名、公证及正式分发验证 |
 
