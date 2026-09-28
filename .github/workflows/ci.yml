@@ -152,29 +152,22 @@ jobs:
           if ($portableState.Mode -ne 'portable') { throw "portable copy mode was $($portableState.Mode)" }
           if ($portableState.InstallDir) { throw "portable copy unexpectedly reported install dir $($portableState.InstallDir)" }
 
+          $portableUpdate = Start-Process -FilePath $portableCopy -ArgumentList @('--apply-update', $setup) -Wait -PassThru
+          if ($portableUpdate.ExitCode -eq 0) { throw 'portable updater unexpectedly accepted automatic install' }
+
           $restartMarker = Join-Path $installDir 'restart-smoke.txt'
           Remove-Item $restartMarker -Force -ErrorAction SilentlyContinue
 
-          $held = Start-Process -FilePath $installedExe -ArgumentList '--hold' -PassThru
-          Start-Sleep -Milliseconds 500
-          if ($held.HasExited) { throw 'hold probe exited before updater smoke' }
+          $launch = (& $installedExe '--apply-update' $setup | ConvertFrom-Json)
+          if (-not $launch.InstallerPID) { throw 'updater core did not return installer PID' }
+          if ($launch.Installation.Mode -ne 'user') { throw "updater core install mode was $($launch.Installation.Mode)" }
+          if (-not $launch.Restart) { throw 'updater core did not request restart' }
 
-          $update = Start-Process -FilePath $setup -ArgumentList @('/S', "/WAITPID=$($held.Id)", '/RESTART=1') -PassThru
-          Start-Sleep -Milliseconds 1000
-          if ($update.HasExited) { throw 'setup did not wait for the running application' }
-
-          Stop-Process -Id $held.Id -Force
-          if (-not $update.WaitForExit(30000)) {
-            Stop-Process -Id $update.Id -Force -ErrorAction SilentlyContinue
-            throw 'setup did not finish after the application exited'
-          }
-          if ($update.ExitCode -ne 0) { throw "wait/restart setup failed: $($update.ExitCode)" }
-
-          $deadline = (Get-Date).AddSeconds(10)
+          $deadline = (Get-Date).AddSeconds(15)
           while (-not (Test-Path $restartMarker) -and (Get-Date) -lt $deadline) {
             Start-Sleep -Milliseconds 200
           }
-          if (-not (Test-Path $restartMarker)) { throw 'installed application was not restarted after update' }
+          if (-not (Test-Path $restartMarker)) { throw 'installed application was not restarted after updater core launch' }
           Remove-Item $restartMarker -Force
 
           $uninstaller = Join-Path $installDir 'Uninstall.exe'

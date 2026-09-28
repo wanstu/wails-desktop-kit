@@ -44,7 +44,7 @@ Updater 拆为四步：
 1. `Check`：**已完成**。比较当前版本与 Release 元数据，支持稳定版 / prerelease 语义版本顺序。
 2. `Download`：**已完成 Core**。下载选定资产，支持进度与 context 取消。
 3. `Verify`：**已完成 Core**。强制校验 SHA256；GitHub asset digest 优先，缺失时使用同名 `.sha256` sidecar，失败不发布最终文件。
-4. `Install`：下一阶段。Windows 调用已验证的 setup 静默升级，当前应用退出后由安装器替换文件，完成后重新启动。
+4. `Install`：**Windows user-scope Core 已实现**。`InstallAndRestart` 只接受重新校验过的 Kit Setup；安装器等待当前 PID 正常退出后覆盖，并在完成后重启。Portable 明确拒绝自动覆盖；machine-scope 暂保留手动安装以避免高权限重启业务程序。
 
 Updater Core 已保持 Provider 可替换，当前内置 GitHub Release provider；消费者也可以接自建更新源。Portable 运行模式可以检查/下载，但只有已安装实例才应该提供“安装并重启”；Portable 不直接尝试自覆盖正在运行的 exe。
 

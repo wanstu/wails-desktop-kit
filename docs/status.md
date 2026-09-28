@@ -10,7 +10,7 @@ Kit 的 Runtime、Theme、配置、安全存储、Build Metadata 与三平台 Pa
 
 Windows Installer v1 已完成：`desktopkit package windows` 直接包装业务已经构建好的 exe，不二次执行 `wails build`；reusable workflow 可同时产出 Portable EXE、NSIS Setup、Portable ZIP 与 SHA256。默认 user scope，支持 machine scope、开始菜单／桌面快捷方式、Windows 卸载注册、`/S` 静默安装与卸载，并明确不递归删除业务 AppData／数据库等持久数据。Know Me 已完成真实 Release、安装、运行、覆盖安装与卸载验收。
 
-Updater Core 的 Check / Download / Verify 已完成首版：Provider 抽象、GitHub Releases、语义版本比较、显式资产选择、下载进度 / context 取消、GitHub digest 或 sidecar SHA256 强制校验均已落地。当前还不会启动安装器或重启应用。
+Updater Core 的 Check / Download / Verify 已完成首版：Provider 抽象、GitHub Releases、语义版本比较、显式资产选择、下载进度 / context 取消、GitHub digest 或 sidecar SHA256 强制校验均已落地。Windows user-scope 安装版现已补齐 Install / Restart：再次校验已下载 Setup 后启动安装器，由 Setup 等待当前进程退出、覆盖安装并重启。Portable 与 machine-scope 均不会自动覆盖。
 
 ## 已完成的工作
 
@@ -52,10 +52,10 @@ UI CSS 已存在不等于消费者页面已经统一；图标 CLI 已存在不�
 
 | 顺序 | 工作 | 完成标准 |
 | --- | --- | --- |
-| 1 | Updater Core 验收 | 用真实 GitHub Release 元数据验证 Check / 资产选择 / SHA256 来源；保持测试不安装任何程序 |
-| 2 | Windows 安装态识别 | 明确 installed / portable 状态与安装器路径能力，不依赖业务应用猜目录 |
-| 3 | Windows Install / Restart | 已安装实例调用已校验 Setup 静默升级；安全退出当前进程后重启 |
-| 4 | 消费者 UI | About / 设置页接入“检查更新 → 下载 → 安装并重启”，Portable 只检查/下载 |
+| 1 | Updater Windows E2E | CI 直接调用 `InstallAndRestart`，验证 user-scope 等待退出 / 覆盖 / 重启，以及 Portable 自动安装拒绝 |
+| 2 | Updater Core 收口 | 补齐错误边界、文档、跨平台测试并准备下一个 Kit RC |
+| 3 | Know Me 消费者接入 | About / 设置页接入“检查更新 → 下载 → 安装并重启”，Portable 只检查/下载 |
+| 4 | 其他消费者迁移 | ADM / SSH / FRP 按产品退出语义逐个接入，不一次性强推 |
 
 PR：
 - [Kit：桌面生命周期与跨平台边界修复](https://github.com/wanstu/wails-desktop-kit/pull/1)
@@ -74,7 +74,7 @@ PR：
 | 共享 build/package CLI | Windows/Linux 已实现 | `desktopkit package linux` 支持 raw / deb / tar.gz；`desktopkit package windows` 支持基于现成 exe 的 NSIS Setup |
 | Windows Installer | 已完成 | user/machine scope、静默安装/卸载、卸载注册、快捷方式、覆盖升级与 E2E CI；Know Me 真实消费者验收通过 |
 | Updater Core | 首版完成 | Provider 抽象、GitHub Release provider、语义版本比较、资产选择、进度/取消、SHA256 强校验；待真实 Release 元数据验收 |
-| Windows 自动更新 | 下一阶段 | 识别安装态后接 Install / Exit / Restart；Portable 不直接自覆盖 |
+| Windows 自动更新 | Core 已实现，待 CI/消费者验收 | user-scope 可 Install / Exit / Restart；Portable 拒绝自动覆盖；machine-scope 暂保留手动安装 |
 | AppImage / DMG / MSI | 扩展点已就绪 | 当前用 post-package hook；成熟后升级为 Kit 内置 builder |
 | macOS signing/notarization | 未实现 | 签名、公证及正式分发验证 |
 

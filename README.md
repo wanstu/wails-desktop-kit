@@ -61,7 +61,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | 运行时下载、缓存、刷新 Theme Pack | [Runtime Theme](docs/runtime-theme.md) |
 | 统一配置目录、保存密码／Token／私钥口令 | [配置目录与安全配置](docs/config-and-secrets.md) |
 | 本地构建、三平台 CI、权限和 Release | [构建与发布](docs/build-release.md) |
-| 检查新版、下载并校验更新资产 | [Updater Core](docs/updater.md) |
+| 检查新版、下载校验，并在 Windows 安装版安全安装/重启 | [Updater Core](docs/updater.md) |
 | 判断哪些代码应放入 Kit | [架构边界](docs/architecture.md) |
 | 对照首个消费者的实际接入 | [FRP 迁移记录](docs/frp-migration.md) |
 | 升级时检查行为变化 | [本轮修复说明](docs/runtime-hardening.md) |
@@ -82,7 +82,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `atomicfile` / `jsonstore` | 0600 原子替换、泛型 JSON Load/Save/Update、Normalize/Validate hook | 配置 schema、默认值和业务迁移版本 |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON；提供 `openssl rand` 等价的安全随机 Secret 生成 | Secret 的逻辑 key 与业务生命周期 |
 | `packaging` / `desktopkit package` | Linux raw / deb / tar.gz；Windows NSIS Setup；桌面元数据、多二进制安装与统一 SHA256 | 产品元数据、稳定 Windows App ID、可选复杂格式 hook |
-| `updater` | Provider 抽象、语义版本比较、GitHub Releases、资产选择、下载进度、强制 SHA256 校验 | 当前版本、Release 仓库/更新源、产品资产命名规则、UI 与安装时机 |
+| `updater` | Provider 抽象、语义版本比较、GitHub Releases、资产选择、下载进度、强制 SHA256 校验、Windows user-scope `InstallAndRestart` | 当前版本、Release 仓库/更新源、产品资产命名规则、UI 与退出时机 |
 | reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Windows Portable/Setup/ZIP、Linux Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
