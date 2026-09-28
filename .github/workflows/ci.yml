@@ -283,12 +283,25 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $base = 'desktopkit-workflow-smoke-windows-amd64'
-          $portable = Join-Path dist "$base.exe"
-          $setup = Join-Path dist "$base-setup.exe"
-          $zip = Join-Path dist "$base.zip"
+
+          $portableFiles = @(Get-ChildItem dist -File -Filter 'desktopkit-workflow-smoke*-windows-amd64.exe' |
+            Where-Object { $_.Name -notlike '*-setup.exe' })
+          $setupFiles = @(Get-ChildItem dist -File -Filter 'desktopkit-workflow-smoke*-windows-amd64-setup.exe')
+          $zipFiles = @(Get-ChildItem dist -File -Filter 'desktopkit-workflow-smoke*-windows-amd64.zip')
+
+          if ($portableFiles.Count -ne 1) { throw "expected one portable exe, found $($portableFiles.Count)" }
+          if ($setupFiles.Count -ne 1) { throw "expected one setup exe, found $($setupFiles.Count)" }
+          if ($zipFiles.Count -ne 1) { throw "expected one portable zip, found $($zipFiles.Count)" }
+
+          $portable = $portableFiles[0].FullName
+          $setup = $setupFiles[0].FullName
+          $zip = $zipFiles[0].FullName
+          $base = [System.IO.Path]::GetFileNameWithoutExtension($portableFiles[0].Name)
+
+          if ($setupFiles[0].Name -ne "$base-setup.exe") { throw "setup base does not match portable: $($setupFiles[0].Name)" }
+          if ($zipFiles[0].Name -ne "$base.zip") { throw "zip base does not match portable: $($zipFiles[0].Name)" }
+
           foreach ($path in @($portable, $setup, $zip)) {
-            if (-not (Test-Path $path)) { throw "missing artifact: $path" }
             $checksum = "$path.sha256"
             if (-not (Test-Path $checksum)) { throw "missing checksum: $checksum" }
             $expected = ((Get-Content $checksum -Raw).Trim() -split "\s+")[0]
