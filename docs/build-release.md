@@ -104,7 +104,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.10.0-rc.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.10.0
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -136,7 +136,7 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.10.0-rc.1` | Packaging helper 版本；正式 v0.10.0 发布时同步切换 |
+| `desktopkit-cli-version` | `v0.10.0` | Packaging helper 版本 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `windows-installer` | `false` | 是否额外生成 NSIS `*-setup.exe`；不影响 portable exe |
 | `windows-install-scope` | `user` | `user` 安装到 LocalAppData，不需要 UAC；`machine` 安装到 Program Files |
@@ -306,4 +306,4 @@ desktopkit upgrade --root . --to v0.9.0
 | macOS 裸 go run 缺少 UTType 符号 | 优先用 Wails 构建器；它会补齐 UniformTypeIdentifiers 框架链接 |
 | wrapper 报错但 CI 看似成功 | 检查 PowerShell 的 LASTEXITCODE 是否正确退出 |
 
-Packaging Pipeline 已通过 Kit 自身 Linux `dpkg-deb` / `tar` / SHA256 验收，并已由 Know Me v0.1.0 的真实 tag Release 验证 raw / deb / tar.gz / macOS app.zip / Windows exe 汇总发布。准确状态见 [进度清单](status.md)。
+Packaging Pipeline 已通过 Kit 自身 Linux `dpkg-deb` / `tar` / SHA256 验收，并已由 Know Me 的真实 tag Release 验证 raw / deb / tar.gz / macOS app.zip / Windows Portable EXE / NSIS Setup / ZIP 汇总发布；`v0.1.6-rc.4` 还完成了本机安装、运行数据目录、覆盖安装与卸载验收。准确状态见 [进度清单](status.md)。
