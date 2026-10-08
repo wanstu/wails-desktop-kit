@@ -29,6 +29,11 @@ func TestPackageWindowsBuildsSetupFromExistingExecutable(t *testing.T) {
 		text := string(script)
 		for _, want := range []string{
 			"RequestExecutionLevel user",
+			`!insertmacro MUI_LANGUAGE "English"`,
+			`!insertmacro MUI_LANGUAGE "SimpChinese"`,
+			`LangString DesktopKitWelcomeTitle ${LANG_SIMPCHINESE}`,
+			`LangString DesktopKitWelcomeTitle ${LANG_ENGLISH}`,
+			`!define MUI_FINISHPAGE_RUN`,
 			"InstallDir \"$LOCALAPPDATA\\Programs\\${PRODUCT_NAME}\"",
 			"File /oname=${APP_EXE}",
 			"WriteRegStr HKCU",

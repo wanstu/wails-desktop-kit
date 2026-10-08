@@ -248,6 +248,7 @@ var windowsInstallerTemplate = template.Must(template.New("windows-installer").P
 SetCompressor /SOLID lzma
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
+!include "LogicLib.nsh"
 
 !define APP_EXE "{{.AppExe}}"
 !define APP_ID "{{.AppID}}"
@@ -262,6 +263,7 @@ VIAddVersionKey /LANG=1033 "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey /LANG=1033 "ProductVersion" "${DISPLAY_VERSION}"
 VIAddVersionKey /LANG=1033 "CompanyName" "${PUBLISHER}"
 VIAddVersionKey /LANG=1033 "FileDescription" "${PRODUCT_NAME} Installer"
+VIAddVersionKey /LANG=2052 "FileDescription" "${PRODUCT_NAME} 安装程序"
 {{if .IconFile}}Icon "{{.IconFile}}"{{end}}
 
 {{if eq .InstallScope "user"}}RequestExecutionLevel user
@@ -271,13 +273,30 @@ InstallDir "$PROGRAMFILES64\${PUBLISHER}\${PRODUCT_NAME}"
 {{end}}
 
 !define MUI_ABORTWARNING
-!insertmacro MUI_PAGE_WELCOME
+!define MUI_WELCOMEPAGE_TITLE "$(DesktopKitWelcomeTitle)"
+!define MUI_WELCOMEPAGE_TEXT "$(DesktopKitWelcomeText)"
+!define MUI_FINISHPAGE_TITLE "$(DesktopKitFinishTitle)"
+!define MUI_FINISHPAGE_TEXT "$(DesktopKitFinishText)"
+!define MUI_FINISHPAGE_NOAUTOCLOSE
+!define MUI_UNFINISHPAGE_NOAUTOCLOSE
+{{if eq .InstallScope "user"}}!define MUI_FINISHPAGE_RUN "$INSTDIR\${APP_EXE}"
+{{end}}!insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
+!insertmacro MUI_LANGUAGE "SimpChinese"
+
+LangString DesktopKitWelcomeTitle ${LANG_ENGLISH} "Welcome to ${PRODUCT_NAME}"
+LangString DesktopKitWelcomeTitle ${LANG_SIMPCHINESE} "欢迎安装 ${PRODUCT_NAME}"
+LangString DesktopKitWelcomeText ${LANG_ENGLISH} "This wizard installs ${PRODUCT_NAME} on your computer.$\r$\n$\r$\nYour personal data will be kept separate from the app and preserved when upgrading."
+LangString DesktopKitWelcomeText ${LANG_SIMPCHINESE} "此向导将安装 ${PRODUCT_NAME}。$\r$\n$\r$\n用户数据与程序分开保存，覆盖升级不会清除用户数据。"
+LangString DesktopKitFinishTitle ${LANG_ENGLISH} "${PRODUCT_NAME} installation complete"
+LangString DesktopKitFinishTitle ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 已安装完成"
+LangString DesktopKitFinishText ${LANG_ENGLISH} "${PRODUCT_NAME} is ready. Click Finish to close Setup."
+LangString DesktopKitFinishText ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 已准备就绪。点击“完成”退出安装程序。"
 
 Var DesktopKitRestartAfterInstall
 
