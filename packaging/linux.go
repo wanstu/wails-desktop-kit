@@ -51,6 +51,7 @@ type LinuxRequest struct {
 	DesktopFile    string
 	IconFile       string
 	ExtraBinaries  []LinuxBinary
+	Systemd        *LinuxSystemdService
 	Formats        []Format
 }
 
@@ -241,6 +242,11 @@ func validateLinuxRequest(request LinuxRequest) error {
 			return fmt.Errorf("extra binary %q must be a regular file", binary.InstallName)
 		}
 	}
+	if request.Systemd != nil {
+		if err := validateLinuxSystemdService(request); err != nil {
+			return err
+		}
+	}
 	for _, format := range request.Formats {
 		switch format {
 		case FormatRaw, FormatDeb, FormatTarGz:
@@ -396,7 +402,11 @@ func buildControlTarGz(request LinuxRequest) ([]byte, error) {
 			fmt.Fprintf(&control, " %s\n", strings.TrimSpace(line))
 		}
 	}
-	return tarGzBytes([]tarEntry{{name: "./control", data: []byte(control.String()), mode: 0o644}})
+	entries := []tarEntry{{name: "./control", data: []byte(control.String()), mode: 0o644}}
+	if request.Systemd != nil {
+		entries = append(entries, linuxServiceControlEntries(request)...)
+	}
+	return tarGzBytes(entries)
 }
 
 func buildDataTarGz(request LinuxRequest) ([]byte, error) {
@@ -445,6 +455,9 @@ func buildDataTarGz(request LinuxRequest) ([]byte, error) {
 			data: data,
 			mode: 0o644,
 		})
+	}
+	if request.Systemd != nil {
+		entries = append(entries, linuxServiceDataEntry(request))
 	}
 	return tarGzBytes(entries)
 }

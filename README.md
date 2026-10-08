@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.11.0-rc.2
+## 安装 v0.11.0
 
-本文对应 **v0.11.0-rc.2**。本次 RC 在 v0.10.0 Windows Installer 基线上加入 Updater Core：GitHub Release / 可替换 Provider、语义版本比较、下载进度与取消、SHA256 强校验，以及 Windows user-scope 安装版的 `InstallAndRestart`。Portable 只检查/下载，不自动覆盖；machine-scope 暂保留手动安装。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.11.0**。本版在 Windows Installer 基线上增加 Updater Core：GitHub Release / 可替换 Provider、语义版本比较、下载进度和取消、SHA256 强校验，以及 Windows user-scope 安装版的 `InstallAndRestart`。Portable 仅支持检查和下载，machine-scope 暂保留手动安装；Windows 安装器支持中英文并防止覆盖正在运行的应用。同时保留 v0.10.1 的可选 Linux systemd 服务打包能力（需显式启用）。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.11.0-rc.2
+go get github.com/wanstu/wails-desktop-kit@v0.11.0
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.0-rc.2
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.0
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,7 +30,8 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
-| `v0.11.0-rc.2` | Updater Core：Check / Download / Verify、GitHub Release provider、Windows user-scope Install/Restart、Portable 自动安装拒绝、真实三平台与 Windows E2E CI |
+| `v0.11.0` | Updater Core：Check / Download / Verify、Windows 安装并重启、中文/英文 NSIS 安装器、防止覆盖运行中的程序；保留 Linux systemd 服务打包；Windows/Linux/macOS CI 与真实 Windows Installer E2E 验证 |
+| `v0.10.1` | Linux `.deb` 可选 systemd：系统用户、自启、升级与保留数据卸载 |
 | `v0.10.0` | Windows NSIS Installer、user/machine scope、静默安装/卸载、Portable/Setup/ZIP 同步发布、真实安装/覆盖/卸载与 reusable workflow E2E CI |
 | `v0.9.0` | Build Metadata/Windows 真实版本资源、`<dk-about>` 统一关于组件、Release tag 自动注入版本与 commit |
 | `v0.8.1` | 原生 Clipboard Runtime/前端 helper、安全随机 Secret、Roadmap；workflow 默认 packaging helper 同步到 v0.8.1 |
@@ -82,7 +83,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`；显式文件/目录迁移原语 | 稳定 App ID 与迁移时机 |
 | `atomicfile` / `jsonstore` | 0600 原子替换、泛型 JSON Load/Save/Update、Normalize/Validate hook | 配置 schema、默认值和业务迁移版本 |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON；提供 `openssl rand` 等价的安全随机 Secret 生成 | Secret 的逻辑 key 与业务生命周期 |
-| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz；Windows NSIS Setup；桌面元数据、多二进制安装与统一 SHA256 | 产品元数据、稳定 Windows App ID、可选复杂格式 hook |
+| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz；可选 systemd 服务安装、自启与升级；Windows NSIS Setup（中英文语言选择和锁定文件防护）；桌面元数据、多二进制安装与统一 SHA256 | 产品元数据、稳定 Windows App ID、可选复杂格式 hook |
 | `updater` | Provider 抽象、语义版本比较、GitHub Releases、资产选择、下载进度、强制 SHA256 校验、Windows user-scope `InstallAndRestart` | 当前版本、Release 仓库/更新源、产品资产命名规则、UI 与退出时机 |
 | reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Windows Portable/Setup/ZIP、Linux Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 

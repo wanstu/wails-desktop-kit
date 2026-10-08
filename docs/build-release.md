@@ -307,3 +307,44 @@ desktopkit upgrade --root . --to v0.9.0
 | wrapper 报错但 CI 看似成功 | 检查 PowerShell 的 LASTEXITCODE 是否正确退出 |
 
 Packaging Pipeline 已通过 Kit 自身 Linux `dpkg-deb` / `tar` / SHA256 验收，并已由 Know Me 的真实 tag Release 验证 raw / deb / tar.gz / macOS app.zip / Windows Portable EXE / NSIS Setup / ZIP 汇总发布；`v0.1.6-rc.4` 还完成了本机安装、运行数据目录、覆盖安装与卸载验收。准确状态见 [进度清单](status.md)。
+
+### Headless systemd service (Linux, opt-in)
+
+Kit can now produce an installable Debian service from a prebuilt Go binary, without
+Wails, GTK, Node, or desktop runtime dependencies. This feature is **opt-in** and
+does not change ordinary desktop .deb packages.
+
+Example:
+
+~~~bash
+desktopkit package linux \
+  --input ./dist/mcp-center-linux-amd64 \
+  --dist ./dist \
+  --app-name mcp-center \
+  --asset-base mcp-center-v0.1.1 \
+  --package-version 0.1.1 \
+  --arch amd64 \
+  --formats deb \
+  --systemd \
+  --service-name mcp-center \
+  --service-user mcp-center \
+  --service-data-dir /var/lib/mcp-center \
+  --service-arg=--listen \
+  --service-arg=0.0.0.0:8610 \
+  --service-arg=--data-dir \
+  --service-arg=/var/lib/mcp-center
+~~~
+
+Debian package installs the executable in /usr/bin and the unit in
+/lib/systemd/system. The maintainer scripts create a dedicated system user and
+/var/lib data directory with mode 0700. On first install, the unit is enabled
+and started; during upgrades, an already-running unit restarts. On remove,
+systemd stops and disables the service. **Uninstall and purge keep /var/lib
+data, keys, and databases**. Removing that data is a separate, explicit
+administrator choice.
+
+Service management: `systemctl status|start|stop|restart mcp-center`;
+logs: `journalctl -u mcp-center -f`. Packaging and tests don't install
+the service on the build machine. Non-systemd environments skip service
+activation, so real Debian/systemd E2E still needs to be tested on a
+supported host.

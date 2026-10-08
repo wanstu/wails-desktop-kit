@@ -26,7 +26,7 @@ Commands:
   icon normalize    Normalize a PNG/JPEG/GIF onto a square transparent PNG canvas.
   icon generate     Generate a deterministic Kit family icon without system fonts.
   icon prepare-wails Prepare build/appicon.png and invalidate generated Windows ICO.
-  package linux     Stage Linux release artifacts (raw, deb, tar.gz) and SHA256 files.
+  package linux     Stage raw/deb/tar.gz and optional systemd service packages, with SHA256.
   package windows   Build an NSIS installer from an already-built Windows executable.
   buildmeta prepare Inject release version into Wails metadata and frontend build info.
   doctor            Inspect Kit/Wails/workflow version drift in a consumer repository.
@@ -193,6 +193,9 @@ func runPackageLinux(args []string) error {
 	var request kitpackaging.LinuxRequest
 	var formats string
 	var extraBins stringValues
+	var serviceArgs stringValues
+	var systemd bool
+	var service kitpackaging.LinuxSystemdService
 
 	flags.StringVar(&request.Input, "input", "", "built Linux executable path")
 	flags.StringVar(&request.OutputDir, "dist", "dist", "output directory")
@@ -210,6 +213,13 @@ func runPackageLinux(args []string) error {
 	flags.StringVar(&request.IconFile, "icon", "", "optional app icon included in deb/tar.gz")
 	flags.Var(&extraBins, "extra-bin", "additional installed executable as name=path; may be repeated")
 	flags.StringVar(&formats, "formats", "raw", "comma-separated formats: raw,deb,tar.gz")
+	flags.BoolVar(&systemd, "systemd", false, "enable systemd service packaging for Linux deb")
+	flags.StringVar(&service.Name, "service-name", "", "systemd unit name, defaults to package-name")
+	flags.StringVar(&service.Description, "service-description", "", "systemd unit description")
+	flags.StringVar(&service.User, "service-user", "", "unprivileged system user created by the package")
+	flags.StringVar(&service.Group, "service-group", "", "system group created by the package")
+	flags.StringVar(&service.DataDir, "service-data-dir", "", "persistent directory under /var/lib")
+	flags.Var(&serviceArgs, "service-arg", "one ExecStart argument; repeat to supply all startup flags")
 
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -232,6 +242,10 @@ func runPackageLinux(args []string) error {
 		return err
 	}
 	request.Formats = parsed
+	if systemd {
+		service.Args = append([]string(nil), serviceArgs...)
+		request.Systemd = &service
+	}
 	request.ExtraBinaries, err = parseExtraBinaries(extraBins)
 	if err != nil {
 		return err
