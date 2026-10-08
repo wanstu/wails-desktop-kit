@@ -238,7 +238,11 @@ func writeWindowsInstallerScript(path string, data windowsTemplateData) error {
 	if err := windowsInstallerTemplate.Execute(&output, data); err != nil {
 		return fmt.Errorf("render NSIS script: %w", err)
 	}
-	if err := os.WriteFile(path, output.Bytes(), 0o644); err != nil {
+	// makensis treats scripts without a BOM as the host ANSI codepage even
+	// when Unicode true is set, causing Chinese installer text to become mojibake.
+	// Mark the generated .nsi as UTF-8 explicitly.
+	utf8Script := append([]byte{0xEF, 0xBB, 0xBF}, output.Bytes()...)
+	if err := os.WriteFile(path, utf8Script, 0o644); err != nil {
 		return fmt.Errorf("write NSIS script: %w", err)
 	}
 	return nil
@@ -297,6 +301,8 @@ LangString DesktopKitFinishTitle ${LANG_ENGLISH} "${PRODUCT_NAME} installation c
 LangString DesktopKitFinishTitle ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 已安装完成"
 LangString DesktopKitFinishText ${LANG_ENGLISH} "${PRODUCT_NAME} is ready. Click Finish to close Setup."
 LangString DesktopKitFinishText ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 已准备就绪。点击“完成”退出安装程序。"
+LangString DesktopKitCloseApp ${LANG_ENGLISH} "${PRODUCT_NAME} is still running. Please exit the app (including its tray icon) and click Retry. Cancel will leave the existing installation unchanged."
+LangString DesktopKitCloseApp ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 仍在运行。请先从托盘菜单彻底退出程序，然后点击“重试”。点击“取消”将保留现有安装。"
 
 Var DesktopKitRestartAfterInstall
 
@@ -322,6 +328,23 @@ desktopkit_init_done:
 FunctionEnd
 
 Section "Install"
+  ; Check before writing any files, including when /S is used.
+  ; This avoids the default obscure Abort/Retry/Ignore locked-EXE dialog.
+  IfFileExists "$INSTDIR\${APP_EXE}" 0 desktopkit_install_process_ok
+ desktopkit_check_process:
+  nsExec::ExecToStack '"$SYSDIR\tasklist.exe" /FI "IMAGENAME eq ${APP_EXE}" /FO CSV /NH'
+  Pop $R0
+  Pop $R1
+  StrCmp $R0 "0" 0 desktopkit_install_process_ok
+  StrLen $R2 '"${APP_EXE}"'
+  StrCpy $R3 $R1 $R2
+  StrCmp $R3 '"${APP_EXE}"' 0 desktopkit_install_process_ok
+  IfSilent desktopkit_app_still_running
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "$(DesktopKitCloseApp)" IDRETRY desktopkit_check_process
+ desktopkit_app_still_running:
+  SetErrorLevel 3
+  Quit
+ desktopkit_install_process_ok:
   SetOverwrite on
   {{if eq .InstallScope "user"}}SetShellVarContext current{{else}}SetShellVarContext all
   SetRegView 64{{end}}

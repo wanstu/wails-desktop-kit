@@ -1,6 +1,7 @@
 package packaging
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,9 +27,16 @@ func TestPackageWindowsBuildsSetupFromExistingExecutable(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		if len(script) < 3 || !bytes.Equal(script[:3], []byte{0xEF, 0xBB, 0xBF}) {
+			t.Fatal("generated NSIS script must start with UTF-8 BOM so Chinese text is not garbled")
+		}
 		text := string(script)
 		for _, want := range []string{
 			"RequestExecutionLevel user",
+			`nsExec::ExecToStack`,
+			`tasklist.exe`,
+			`LangString DesktopKitCloseApp ${LANG_SIMPCHINESE}`,
+			`IfSilent desktopkit_app_still_running`,
 			`!insertmacro MUI_LANGUAGE "English"`,
 			`!insertmacro MUI_LANGUAGE "SimpChinese"`,
 			`LangString DesktopKitWelcomeTitle ${LANG_SIMPCHINESE}`,

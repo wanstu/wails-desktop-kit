@@ -155,6 +155,22 @@ jobs:
           $portableUpdate = Start-Process -FilePath $portableCopy -ArgumentList @('--apply-update', $setup) -Wait -PassThru
           if ($portableUpdate.ExitCode -eq 0) { throw 'portable updater unexpectedly accepted automatic install' }
 
+          # A manual installer must never attempt to overwrite a running EXE.
+          # Silent mode must fail deterministically instead of hanging on the NSIS Retry dialog.
+          $beforeHash = (Get-FileHash $installedExe -Algorithm SHA256).Hash
+          $runningApp = Start-Process -FilePath $installedExe -ArgumentList '--hold' -PassThru
+          try {
+            Start-Sleep -Milliseconds 500
+            if ($runningApp.HasExited) { throw 'fixture exited before overwrite test' }
+            $blocked = Start-Process -FilePath $setup -ArgumentList '/S' -Wait -PassThru
+            if ($blocked.ExitCode -ne 3) { throw "running app must block silent setup with exit code 3, got $($blocked.ExitCode)" }
+            $afterHash = (Get-FileHash $installedExe -Algorithm SHA256).Hash
+            if ($beforeHash -ne $afterHash) { throw 'installer modified the running executable' }
+          } finally {
+            Stop-Process -Id $runningApp.Id -Force -ErrorAction SilentlyContinue
+            Wait-Process -Id $runningApp.Id -ErrorAction SilentlyContinue
+          }
+
           $restartMarker = Join-Path $installDir 'restart-smoke.txt'
           Remove-Item $restartMarker -Force -ErrorAction SilentlyContinue
 
