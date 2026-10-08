@@ -343,8 +343,8 @@ systemd stops and disables the service. **Uninstall and purge keep /var/lib
 data, keys, and databases**. Removing that data is a separate, explicit
 administrator choice.
 
-Service management: \`systemctl status|start|stop|restart mcp-center\`;
-logs: \`journalctl -u mcp-center -f\`. Packaging and tests don't install
+Service management: `systemctl status|start|stop|restart mcp-center`;
+logs: `journalctl -u mcp-center -f`. Packaging and tests don't install
 the service on the build machine. Non-systemd environments skip service
 activation, so real Debian/systemd E2E still needs to be tested on a
 supported host.

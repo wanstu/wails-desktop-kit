@@ -4,12 +4,12 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.10.0
+## 安装 v0.10.1
 
-本文对应 **v0.10.0**。本版新增 Windows Installer：`desktopkit package windows` 可以直接把已经构建好的 Wails exe 打成 NSIS Setup，不重复编译业务应用；reusable workflow 可同时发布 Portable EXE、Setup EXE、Portable ZIP 和 SHA256。默认采用 user scope，支持 `/S` 静默安装/卸载，并且卸载不会递归删除业务数据目录。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.10.1**。本次新增可选 Linux systemd 服务打包能力；仅显式传入 `--systemd` 的服务应用受影响，原桌面应用不变。v0.10.0 还新增 Windows Installer：`desktopkit package windows` 可以直接把已经构建好的 Wails exe 打成 NSIS Setup，不重复编译业务应用；reusable workflow 可同时发布 Portable EXE、Setup EXE、Portable ZIP 和 SHA256。默认采用 user scope，支持 `/S` 静默安装/卸载，并且卸载不会递归删除业务数据目录。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.10.0
+go get github.com/wanstu/wails-desktop-kit@v0.10.1
 ~~~
 
 GitHub reusable workflow 同步固定：
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.10.1` | Linux `.deb` 可选 systemd：系统用户、自启、升级与保留数据卸载 |
 | `v0.10.0` | Windows NSIS Installer、user/machine scope、静默安装/卸载、Portable/Setup/ZIP 同步发布、真实安装/覆盖/卸载与 reusable workflow E2E CI |
 | `v0.9.0` | Build Metadata/Windows 真实版本资源、`<dk-about>` 统一关于组件、Release tag 自动注入版本与 commit |
 | `v0.8.1` | 原生 Clipboard Runtime/前端 helper、安全随机 Secret、Roadmap；workflow 默认 packaging helper 同步到 v0.8.1 |
