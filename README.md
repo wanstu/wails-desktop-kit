@@ -80,7 +80,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | `paths` | 跨平台统一 `$XDG_CONFIG_HOME/<app>`；显式文件/目录迁移原语 | 稳定 App ID 与迁移时机 |
 | `atomicfile` / `jsonstore` | 0600 原子替换、泛型 JSON Load/Save/Update、Normalize/Validate hook | 配置 schema、默认值和业务迁移版本 |
 | `secureconfig` | 系统凭据库托管主密钥；AES-256-GCM 加密 Secret / JSON；提供 `openssl rand` 等价的安全随机 Secret 生成 | Secret 的逻辑 key 与业务生命周期 |
-| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz；Windows NSIS Setup；桌面元数据、多二进制安装与统一 SHA256 | 产品元数据、稳定 Windows App ID、可选复杂格式 hook |
+| `packaging` / `desktopkit package` | Linux raw / deb / tar.gz；可选 systemd 服务安装、自启与升级；Windows NSIS Setup；桌面元数据、多二进制安装与统一 SHA256 | 产品元数据、稳定 Windows App ID、可选复杂格式 hook |
 | reusable workflow | Windows/Linux/macOS 可选矩阵、平台专属 wrapper、Windows Portable/Setup/ZIP、Linux Packaging Pipeline、自动 SHA256、可选 Release | 应用构建目录、产品 wrapper、caller 权限 |
 
 可以分阶段接入。使用 Runtime 不要求迁移 UI；使用 CSS 或 icon CLI 也不要求把业务入口改成 `desktopkit.Run`。
