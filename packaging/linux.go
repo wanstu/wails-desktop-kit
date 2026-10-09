@@ -48,6 +48,8 @@ type LinuxRequest struct {
 	Section        string
 	Priority       string
 	Depends        string
+	CopyrightFile  string
+	AppStreamFile  string
 	DesktopFile    string
 	IconFile       string
 	ExtraBinaries  []LinuxBinary
@@ -142,6 +144,8 @@ func normalizeLinuxRequest(request LinuxRequest) LinuxRequest {
 	request.Section = strings.TrimSpace(request.Section)
 	request.Priority = strings.TrimSpace(request.Priority)
 	request.Depends = strings.TrimSpace(request.Depends)
+	request.CopyrightFile = strings.TrimSpace(request.CopyrightFile)
+	request.AppStreamFile = strings.TrimSpace(request.AppStreamFile)
 	request.DesktopFile = strings.TrimSpace(request.DesktopFile)
 	request.IconFile = strings.TrimSpace(request.IconFile)
 	for i := range request.ExtraBinaries {
@@ -208,6 +212,8 @@ func validateLinuxRequest(request LinuxRequest) error {
 		name string
 		path string
 	}{
+		{"copyright file", request.CopyrightFile},
+		{"AppStream metadata file", request.AppStreamFile},
 		{"desktop file", request.DesktopFile},
 		{"icon file", request.IconFile},
 	} {
@@ -390,6 +396,11 @@ func buildControlTarGz(request LinuxRequest) ([]byte, error) {
 	fmt.Fprintf(&control, "Section: %s\n", request.Section)
 	fmt.Fprintf(&control, "Priority: %s\n", request.Priority)
 	fmt.Fprintf(&control, "Architecture: %s\n", request.Architecture)
+	installedKiB, err := linuxInstalledSizeKiB(request)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(&control, "Installed-Size: %d\n", installedKiB)
 	fmt.Fprintf(&control, "Maintainer: %s\n", strings.ReplaceAll(request.Maintainer, "\n", " "))
 	if request.Depends != "" {
 		fmt.Fprintf(&control, "Depends: %s\n", strings.ReplaceAll(request.Depends, "\n", " "))
@@ -458,6 +469,20 @@ func buildDataTarGz(request LinuxRequest) ([]byte, error) {
 	}
 	if request.Systemd != nil {
 		entries = append(entries, linuxServiceDataEntry(request))
+	}
+	if request.AppStreamFile != "" {
+		data, err := os.ReadFile(request.AppStreamFile)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, tarEntry{name: "./usr/share/metainfo/" + request.PackageName + ".metainfo.xml", data: data, mode: 0o644})
+	}
+	if request.CopyrightFile != "" {
+		data, err := os.ReadFile(request.CopyrightFile)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, tarEntry{name: "./usr/share/doc/" + request.PackageName + "/copyright", data: data, mode: 0o644})
 	}
 	return tarGzBytes(entries)
 }
