@@ -475,7 +475,11 @@ func buildDataTarGz(request LinuxRequest) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		entries = append(entries, tarEntry{name: "./usr/share/metainfo/" + request.PackageName + ".metainfo.xml", data: data, mode: 0o644})
+		fileName, err := linuxAppStreamFileName(data)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, tarEntry{name: "./usr/share/metainfo/" + fileName, data: data, mode: 0o644})
 	}
 	if request.CopyrightFile != "" {
 		data, err := os.ReadFile(request.CopyrightFile)

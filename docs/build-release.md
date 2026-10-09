@@ -362,3 +362,19 @@ an actual license/copyright declaration, `--copyright-file ./COPYRIGHT`
 installs that declaration in `/usr/share/doc/<package>/copyright`.
 Kit does not invent a license for products which have not chosen one;
 GNOME Software may still show Unknown License without upstream metadata.
+
+### AppStream metainfo component-ID filenames
+
+When `--appstream-file` is supplied, Kit validates the XML root and component
+`<id>` field and installs the metainfo as
+`/usr/share/metainfo/<component-id>.metainfo.xml`. The Debian package name
+and AppStream component ID often differ; naming it after the package name
+would prevent software centers from reliably associating the metadata.
+
+The `<project_license>` declaration is an SPDX expression supplied by the
+application (not inferred by Kit). Use `appstreamcli validate` to check
+metadata in a Debian/Ubuntu environment. GNOME Software opening a *local*
+`.deb` may still display "Unknown License" because the local-package
+details page is not guaranteed to associate AppStream catalog data with
+the PackageKit package; a correct metainfo file alone does not guarantee
+that UI presentation. Distribution repository metadata is a separate issue.
