@@ -1,6 +1,6 @@
 # Kit 单一版本与发布规范
 
-Kit 是单个 Go Module、单个发布主线，不允许“每个 Agent 发布自己的 Kit”。本文目标版本为 `v0.11.2`；发布成功前，以 GitHub 最新正式 Release 与 tag 为准。
+Kit 是单个 Go Module、单个发布主线，不允许“每个 Agent 发布自己的 Kit”。本文目标版本为 `v0.11.3`；发布成功前，以 GitHub 最新正式 Release 与 tag 为准。
 
 ## 唯一事实来源
 
@@ -38,4 +38,4 @@ Kit 是单个 Go Module、单个发布主线，不允许“每个 Agent 发布�
 
 ## 已知版本混乱的历史修复
 
-2026-10-09 核对到本地 `master=4390bb2`（v0.10.3）而远程 `origin/master=62236c0`（v0.11.0）。远程 v0.11.0 已合并 Linux systemd 打包与中英文 NSIS / Updater，不允许从旧 master 倒退发布。v0.11.1 补入 `servicecontrol` 并让默认 workflow helper 与新发布一致。历史 v0.10.x tag 保留供现有消费者锁定，不重写 tag。2026-10-09 复核发现 v0.11.1 遗漏了 v0.10.2/0.10.3 维护线提交，v0.11.2 将两次维护变更逐项移植并验证，再通过合并维护线提交关闭 Git 祖先关系分叉；额外修复 Debian data.tar.gz 父目录条目。禁止通过改写已发布 v0.11.1 的 tag 解决此问题。
+2026-10-09 核对到本地 `master=4390bb2`（v0.10.3）而远程 `origin/master=62236c0`（v0.11.0）。远程 v0.11.0 已合并 Linux systemd 打包与中英文 NSIS / Updater，不允许从旧 master 倒退发布。v0.11.1 补入 `servicecontrol` 并让默认 workflow helper 与新发布一致。历史 v0.10.x tag 保留供现有消费者锁定，不重写 tag。2026-10-09 复核发现 v0.11.1 遗漏了 v0.10.2/0.10.3 维护线提交，v0.11.2 已将两次维护变更逐项移植并验证，并通过合并维护线提交关闭 Git 祖先关系分叉；额外修复 Debian data.tar.gz 父目录条目。禁止通过改写已发布 v0.11.1 的 tag 解决此问题。

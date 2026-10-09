@@ -2,7 +2,7 @@
 
 [功能矩阵](capabilities.md) · [统一版本规则](version-policy.md) · [构建与发布](build-release.md)
 
-核对日期：2026-10-09。目标发布：**v0.11.2**，解决维护线分叉。
+核对日期：2026-10-09。当前正式基线 **v0.11.2**；下一补丁版本目标 **v0.11.3**，完成脚本版本检测与 systemd 生命周期真实验收。
 
 ## 代码基线
 
@@ -28,14 +28,14 @@ v0.11.1 正式基线为 `b2513b9`，远程 `origin/master` 已包含 Windows 安
 | [Updater CI 36421849097](https://github.com/wanstu/wails-desktop-kit/actions/runs/36421849097) | Windows 已安装实例 Install/Restart、Portable 拒绝自覆盖 |
 | [Know Me 消费者 CI 36326162758](https://github.com/wanstu/know_me/actions/runs/36326162758) | 真实消费者 Windows Setup 安装/卸载和数据保留 |
 
-v0.11.1 已有通过的跨平台 CI：[运行 37886788530](https://github.com/wanstu/wails-desktop-kit/actions/runs/37886788530)。这些旧 CI 不能证明 v0.11.2 已通过；必须在新 tag 后复核并记录结果。
+v0.11.1 跨平台 CI：[37886788530](https://github.com/wanstu/wails-desktop-kit/actions/runs/37886788530)。v0.11.2 主线跨平台与 Windows 安装器工作流 CI：[37894619736](https://github.com/wanstu/wails-desktop-kit/actions/runs/37894619736)，均已通过。新版本须以自己的主线 CI 再次验收。
 
 ## Kit 版本治理补充验收（v0.11.2 之后开发）
 
 - `doctor/upgrade`：覆盖消费者构建脚本中 `desktopkit@v...` 固定引用及 `desktopkit-cli-version`，并支持 `go.mod` 单行和多行 require。动态变量不被擅自改写。
 - Linux：新增在真实 systemd 宿主上对 Kit 生成的 `.deb` 执行 `dpkg --install`、升级、服务重启、`--remove`、`--purge`，验证 `/var/lib/<package>` 文件在全流程保留。CI 必须真实运行，不具备 systemd 时直接失败而不是跳过。
 
-以上需以新版本的跨平台 CI 通过为验收标准，未通过前不得宣告完成。业务应用的升级和集成不属于本次工作。
+PR 及本地测试已建立，Linux systemd 全流程实机测试已通过：[Kit CI 37898065585](https://github.com/wanstu/wails-desktop-kit/actions/runs/37898065585)。必须在 v0.11.3 的最终主线 CI 通过后才能宣告发布完成。业务应用的升级和集成不属于本次工作。
 
 ## 后续工作
 

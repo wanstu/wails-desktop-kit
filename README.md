@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.11.2
+## 安装 v0.11.3
 
-本文对应 **v0.11.2**。在 v0.11.1 Windows Installer、Updater Core、Linux systemd 打包与 `servicecontrol` CLI 库的统一基础上，补齐维护线 v0.10.2/v0.10.3 的 Debian Installed-Size、许可证文件、systemd EnvironmentFile/Environment 配置与 AppStream 组件 ID 命名修复，并确保 Debian tar 中的父目录条目完整。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.11.3**：基于已统一 v0.10.x 维护功能的 v0.11.2，修复 `doctor/upgrade` 对脚本中固定 Kit CLI 版本的检测与更新，并补齐真实 systemd `.deb` 安装、升级、卸载、重装、purge、数据保留验收；同时修复卸载后重装可能不自动启动服务的问题，普通升级不会重新启用手动停用的服务。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.11.2
+go get github.com/wanstu/wails-desktop-kit@v0.11.3
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.3
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.11.3` | doctor/upgrade 支持脚本固定 Kit CLI 版本；真实 Debian systemd 安装/升级/卸载/重装/数据保留 CI；修复重装服务恢复 |
 | `v0.11.2` | 合并 v0.10.2/0.10.3 Debian 元数据、服务配置、AppStream 修复；增加父目录完整性测试 |
 | `v0.11.1` | Linux servicecontrol 服务管理 CLI，Windows 安装器与 Updater Core |
 | `v0.11.0` | Updater Core、Windows 安装并重启、双语 NSIS 安装器 |

@@ -2,9 +2,9 @@
 
 > 维护原则：正式 tag 的源代码决定“已发布”；主线未发布提交决定“待发布”；业务工程的 go.mod / workflow 决定“是否接入”。文档不能替代这三项证据。
 
-## v0.11.2 合并目标功能
+## v0.11.3 验收目标功能
 
-| 模块 | Kit API / 路径 | 正式版本首次引入 | v0.11.2 目标状态与边界 |
+| 模块 | Kit API / 路径 | 正式版本首次引入 | v0.11.3 目标状态与边界 |
 | --- | --- | --- | --- |
 | Desktop Runtime | 根包 Config / Hooks / Controller | v0.2.0 | 已包含；Wails v2 生命周期、窗口、托盘、单实例及退出策略 |
 | Login AutoStart | autostart | v0.2.x | 已包含；Windows / Linux / macOS 登录自启，不等于 Linux systemd 服务 |
@@ -20,6 +20,8 @@
 | Debian tar 父目录 | packaging/linux | v0.11.2 | 增加显式目录条目和覆盖桌面资源/systemd/AppStream 的测试 |
 | Updater Core | updater | v0.11.0 | 已包含 Check/Download/Verify 与 Windows user-scope Install/Restart；Portable 不自覆盖，machine-scope 不自动安装 |
 | Linux 服务管理 CLI | servicecontrol | v0.11.1 | 已包含 status/start/stop/restart/enable/disable；业务须显式注册命令，非安装工具 |
+| 脚本 Kit 版本检测/升级 | cmd/desktopkit doctor/upgrade | v0.11.3 | 检查 go.mod、workflow、固定 CLI 脚本版本并修正；不猜测动态变量 |
+| Linux systemd 真实部署验收 | packaging/linux_systemd + GitHub CI | v0.11.3 | 对 .deb 完成 systemd 安装、升级、手动 disable 保留、删除、重装、purge 与数据保留验收 |
 
 ## 2026-10-09 消费者源码快照
 
@@ -32,7 +34,7 @@
 
 这里记录的是检查时的源码状态，而不是线上发布版本。Go 依赖与 GitHub reusable workflow 是**两项独立版本引用**，分别检查。
 
-## 可以进一步抽象，但不包含在 v0.11.2
+## 可以进一步抽象，但不包含在 v0.11.3
 
 | 来源 | 候选公共模块 | 决策 |
 | --- | --- | --- |
