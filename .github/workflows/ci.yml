@@ -72,6 +72,35 @@ jobs:
           dpkg-deb --build --root-owner-group "$deb_root" /tmp/desktopkit-deb-smoke.deb
           dpkg-deb --info /tmp/desktopkit-deb-smoke.deb >/dev/null
 
+          # Test the actual Kit-generated .deb, including paths introduced in
+          # the v0.10.2/v0.10.3 maintenance line.
+          printf '<component><id>io.example.desktopkit-smoke</id></component>\n' > "$deb_root/smoke.metainfo.xml"
+          printf 'Example test license\n' > "$deb_root/COPYRIGHT"
+          go run ./cmd/desktopkit package linux \
+            --input /bin/true \
+            --dist "$deb_root/out" \
+            --app-name desktopkit-deb-smoke \
+            --asset-base desktopkit-deb-smoke \
+            --package-version 0.0.0 \
+            --description "Desktop Kit packaging smoke" \
+            --maintainer desktopkit-ci \
+            --formats deb \
+            --systemd \
+            --service-env "PORT=8610" \
+            --service-environment-file "/etc/default/desktopkit-deb-smoke" \
+            --appstream-file "$deb_root/smoke.metainfo.xml" \
+            --copyright-file "$deb_root/COPYRIGHT"
+          kit_deb="$deb_root/out/desktopkit-deb-smoke-linux-amd64.deb"
+          dpkg-deb --info "$kit_deb"
+          dpkg-deb --contents "$kit_deb" >/dev/null
+          dpkg-deb --extract "$kit_deb" "$deb_root/extracted"
+          test -f "$deb_root/extracted/usr/bin/desktopkit-deb-smoke"
+          test -f "$deb_root/extracted/lib/systemd/system/desktopkit-deb-smoke.service"
+          test -f "$deb_root/extracted/usr/share/metainfo/io.example.desktopkit-smoke.metainfo.xml"
+          test -f "$deb_root/extracted/usr/share/doc/desktopkit-deb-smoke/copyright"
+          grep -F 'EnvironmentFile=-/etc/default/desktopkit-deb-smoke' "$deb_root/extracted/lib/systemd/system/desktopkit-deb-smoke.service"
+          dpkg-deb --ctrl-tarfile "$kit_deb" | tar -xOf - ./control | grep -F 'Installed-Size:'
+
       - name: macOS Wails and tray lifecycle smoke
         if: runner.os == 'macOS'
         # Match the framework linked by Wails' macOS build command.

@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.11.1
+## 安装 v0.11.2
 
-本文对应 **v0.11.1**。在 v0.11.0 的 Windows Installer、Updater Core 和 Linux systemd 打包基线上，新增通用 Linux `servicecontrol` 服务管理 CLI 库，并统一功能清单与发布规范。本版继续包含 Updater Core：GitHub Release / 可替换 Provider、语义版本比较、下载进度和取消、SHA256 强校验，以及 Windows user-scope 安装版的 `InstallAndRestart`。Portable 仅支持检查和下载，machine-scope 暂保留手动安装；Windows 安装器支持中英文并防止覆盖正在运行的应用。同时保留 v0.10.1 的可选 Linux systemd 服务打包能力（需显式启用）。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.11.2**。在 v0.11.1 Windows Installer、Updater Core、Linux systemd 打包与 `servicecontrol` CLI 库的统一基础上，补齐维护线 v0.10.2/v0.10.3 的 Debian Installed-Size、许可证文件、systemd EnvironmentFile/Environment 配置与 AppStream 组件 ID 命名修复，并确保 Debian tar 中的父目录条目完整。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.11.1
+go get github.com/wanstu/wails-desktop-kit@v0.11.2
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.1
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,8 +30,11 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
-| `v0.11.1` | 统一 Linux servicecontrol 服务管理 CLI，保留 v0.11.0 全部功能；同步 workflow helper、版本规范与功能矩阵 |
-| `v0.11.0` | Updater Core：Check / Download / Verify、Windows 安装并重启、中文/英文 NSIS 安装器、防止覆盖运行中的程序；保留 Linux systemd 服务打包；Windows/Linux/macOS CI 与真实 Windows Installer E2E 验证 |
+| `v0.11.2` | 合并 v0.10.2/0.10.3 Debian 元数据、服务配置、AppStream 修复；增加父目录完整性测试 |
+| `v0.11.1` | Linux servicecontrol 服务管理 CLI，Windows 安装器与 Updater Core |
+| `v0.11.0` | Updater Core、Windows 安装并重启、双语 NSIS 安装器 |
+| `v0.10.3` | AppStream 元数据组件 ID 命名修复（维护线） |
+| `v0.10.2` | Debian Installed-Size、可选版权文件、systemd 环境变量覆盖（维护线） |
 | `v0.10.1` | Linux `.deb` 可选 systemd：系统用户、自启、升级与保留数据卸载 |
 | `v0.10.0` | Windows NSIS Installer、user/machine scope、静默安装/卸载、Portable/Setup/ZIP 同步发布、真实安装/覆盖/卸载与 reusable workflow E2E CI |
 | `v0.9.0` | Build Metadata/Windows 真实版本资源、`<dk-about>` 统一关于组件、Release tag 自动注入版本与 commit |

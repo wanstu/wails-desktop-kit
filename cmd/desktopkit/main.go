@@ -194,6 +194,7 @@ func runPackageLinux(args []string) error {
 	var formats string
 	var extraBins stringValues
 	var serviceArgs stringValues
+	var serviceEnv stringValues
 	var systemd bool
 	var service kitpackaging.LinuxSystemdService
 
@@ -209,6 +210,8 @@ func runPackageLinux(args []string) error {
 	flags.StringVar(&request.Section, "section", "utils", "Debian section")
 	flags.StringVar(&request.Priority, "priority", "optional", "Debian priority")
 	flags.StringVar(&request.Depends, "depends", "", "Debian Depends value")
+	flags.StringVar(&request.CopyrightFile, "copyright-file", "", "optional Debian copyright/license text included under /usr/share/doc/<package>/copyright")
+	flags.StringVar(&request.AppStreamFile, "appstream-file", "", "optional application AppStream .metainfo.xml, declares product license if known")
 	flags.StringVar(&request.DesktopFile, "desktop-file", "", "optional .desktop file included in deb/tar.gz")
 	flags.StringVar(&request.IconFile, "icon", "", "optional app icon included in deb/tar.gz")
 	flags.Var(&extraBins, "extra-bin", "additional installed executable as name=path; may be repeated")
@@ -219,6 +222,8 @@ func runPackageLinux(args []string) error {
 	flags.StringVar(&service.User, "service-user", "", "unprivileged system user created by the package")
 	flags.StringVar(&service.Group, "service-group", "", "system group created by the package")
 	flags.StringVar(&service.DataDir, "service-data-dir", "", "persistent directory under /var/lib")
+	flags.StringVar(&service.EnvironmentFile, "service-environment-file", "", "optional /etc/default/<service> configuration file")
+	flags.Var(&serviceEnv, "service-env", "default environment variable NAME=value; repeatable")
 	flags.Var(&serviceArgs, "service-arg", "one ExecStart argument; repeat to supply all startup flags")
 
 	if err := flags.Parse(args); err != nil {
@@ -244,6 +249,7 @@ func runPackageLinux(args []string) error {
 	request.Formats = parsed
 	if systemd {
 		service.Args = append([]string(nil), serviceArgs...)
+		service.Environment = append([]string(nil), serviceEnv...)
 		request.Systemd = &service
 	}
 	request.ExtraBinaries, err = parseExtraBinaries(extraBins)

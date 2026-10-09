@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前稳定版本 v0.11.1。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前稳定版本 v0.11.2。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -40,7 +40,7 @@ v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程�
 Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.11.1
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.11.2
 
 desktopkit package linux `
   --input .\build\bin\desktop-demo `
@@ -78,7 +78,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -104,7 +104,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.1
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -136,7 +136,7 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.11.1` | Packaging helper 版本；必须与发布的 reusable workflow 固定在同一 Kit 版本 |
+| `desktopkit-cli-version` | `v0.11.2` | Packaging helper 版本；必须与发布的 reusable workflow 固定在同一 Kit 版本 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `windows-installer` | `false` | 是否额外生成 NSIS `*-setup.exe`；不影响 portable exe |
 | `windows-install-scope` | `user` | `user` 安装到 LocalAppData，不需要 UAC；`machine` 安装到 Program Files |
@@ -290,7 +290,7 @@ desktopkit doctor --root .
 发现 Kit module 与 workflow 版本不一致时返回非零退出码，适合本地升级前或 CI 检查。升级时可同时修改 `go.mod` 和所有 reusable workflow 引用：
 
 ~~~powershell
-desktopkit upgrade --root . --to v0.11.1
+desktopkit upgrade --root . --to v0.11.2
 ~~~
 
 默认随后执行 `go mod tidy`；只做文本升级可加 `--tidy=false`。升级命令不会改业务源码，也不会自动改变 Runtime policy。
@@ -348,3 +348,33 @@ logs: `journalctl -u mcp-center -f`. Packaging and tests don't install
 the service on the build machine. Non-systemd environments skip service
 activation, so real Debian/systemd E2E still needs to be tested on a
 supported host.
+
+### Service configuration and copyright metadata
+
+Linux service packages may define `--service-env=APP_LISTEN=0.0.0.0:8610`,
+`--service-environment-file=/etc/default/app` and `--service-arg=\${APP_LISTEN}`.
+The generated systemd unit reads an optional environment file on each start.
+Administrators can change the port without editing the unit, and upgrades
+preserve their configuration.
+
+Debian packages now include a nonzero `Installed-Size`. If a product has
+an actual license/copyright declaration, `--copyright-file ./COPYRIGHT`
+installs that declaration in `/usr/share/doc/<package>/copyright`.
+Kit does not invent a license for products which have not chosen one;
+GNOME Software may still show Unknown License without upstream metadata.
+
+### AppStream metainfo component-ID filenames
+
+When `--appstream-file` is supplied, Kit validates the XML root and component
+`<id>` field and installs the metainfo as
+`/usr/share/metainfo/<component-id>.metainfo.xml`. The Debian package name
+and AppStream component ID often differ; naming it after the package name
+would prevent software centers from reliably associating the metadata.
+
+The `<project_license>` declaration is an SPDX expression supplied by the
+application (not inferred by Kit). Use `appstreamcli validate` to check
+metadata in a Debian/Ubuntu environment. GNOME Software opening a *local*
+`.deb` may still display "Unknown License" because the local-package
+details page is not guaranteed to associate AppStream catalog data with
+the PackageKit package; a correct metainfo file alone does not guarantee
+that UI presentation. Distribution repository metadata is a separate issue.
