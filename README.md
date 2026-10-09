@@ -4,12 +4,12 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.11.1
+## 安装 v0.11.2
 
-本文对应 **v0.11.1**，包含 Windows Installer、Updater Core、Linux systemd 打包与 `servicecontrol` CLI 库。后续版本正在整合 v0.10.2/v0.10.3 维护线的 Debian 元数据、持久化服务配置和 AppStream 功能。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.11.2**。在 v0.11.1 Windows Installer、Updater Core、Linux systemd 打包与 `servicecontrol` CLI 库的统一基础上，补齐维护线 v0.10.2/v0.10.3 的 Debian Installed-Size、许可证文件、systemd EnvironmentFile/Environment 配置与 AppStream 组件 ID 命名修复，并确保 Debian tar 中的父目录条目完整。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.11.1
+go get github.com/wanstu/wails-desktop-kit@v0.11.2
 ~~~
 
 GitHub reusable workflow 同步固定：
@@ -30,9 +30,10 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.11.2` | 合并 v0.10.2/0.10.3 Debian 元数据、服务配置、AppStream 修复；增加父目录完整性测试 |
 | `v0.11.1` | Linux servicecontrol 服务管理 CLI，Windows 安装器与 Updater Core |
 | `v0.11.0` | Updater Core、Windows 安装并重启、双语 NSIS 安装器 |
-| `v0.10.3` | AppStream 元数据命名修复（维护线） |
+| `v0.10.3` | AppStream 元数据组件 ID 命名修复（维护线） |
 | `v0.10.2` | Debian Installed-Size、可选版权文件、systemd 环境变量覆盖（维护线） |
 | `v0.10.1` | Linux `.deb` 可选 systemd：系统用户、自启、升级与保留数据卸载 |
 | `v0.10.0` | Windows NSIS Installer、user/machine scope、静默安装/卸载、Portable/Setup/ZIP 同步发布、真实安装/覆盖/卸载与 reusable workflow E2E CI |
