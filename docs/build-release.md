@@ -348,3 +348,17 @@ logs: `journalctl -u mcp-center -f`. Packaging and tests don't install
 the service on the build machine. Non-systemd environments skip service
 activation, so real Debian/systemd E2E still needs to be tested on a
 supported host.
+
+### Service configuration and copyright metadata
+
+Linux service packages may define `--service-env=APP_LISTEN=0.0.0.0:8610`,
+`--service-environment-file=/etc/default/app` and `--service-arg=\${APP_LISTEN}`.
+The generated systemd unit reads an optional environment file on each start.
+Administrators can change the port without editing the unit, and upgrades
+preserve their configuration.
+
+Debian packages now include a nonzero `Installed-Size`. If a product has
+an actual license/copyright declaration, `--copyright-file ./COPYRIGHT`
+installs that declaration in `/usr/share/doc/<package>/copyright`.
+Kit does not invent a license for products which have not chosen one;
+GNOME Software may still show Unknown License without upstream metadata.

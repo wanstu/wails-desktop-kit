@@ -10,16 +10,19 @@ import (
 // LinuxSystemdService enables service packaging explicitly. Existing desktop
 // consumers with nil Systemd retain the original packaging behavior.
 type LinuxSystemdService struct {
-	Name        string
-	Description string
-	User        string
-	Group       string
-	DataDir     string
-	Args        []string
+	Name            string
+	Description     string
+	User            string
+	Group           string
+	DataDir         string
+	Args            []string
+	EnvironmentFile string   // Optional /etc/default/<service> path; absent files are ignored.
+	Environment     []string // KEY=value entries; overridden by EnvironmentFile.
 }
 
 var linuxServiceUserPattern = regexp.MustCompile("^[a-z_][a-z0-9_-]*$")
 var linuxServicePathPattern = regexp.MustCompile("^/[a-zA-Z0-9_+./-]+$")
+var linuxServiceEnvKeyPattern = regexp.MustCompile("^[A-Za-z_][A-Za-z0-9_]*$")
 
 func normalizedService(request LinuxRequest) LinuxSystemdService {
 	s := *request.Systemd
@@ -65,6 +68,17 @@ func validateLinuxSystemdService(request LinuxRequest) error {
 	if strings.TrimSpace(s.Description) == "" || strings.ContainsAny(s.Description, "\r\n") {
 		return fmt.Errorf("invalid service description")
 	}
+	if s.EnvironmentFile != "" {
+		if !strings.HasPrefix(s.EnvironmentFile, "/etc/default/") || path.Clean(s.EnvironmentFile) != s.EnvironmentFile || !linuxServicePathPattern.MatchString(s.EnvironmentFile) {
+			return fmt.Errorf("invalid service environment file %q", s.EnvironmentFile)
+		}
+	}
+	for _, entry := range s.Environment {
+		parts := strings.SplitN(entry, "=", 2)
+		if len(parts) != 2 || !linuxServiceEnvKeyPattern.MatchString(parts[0]) || strings.ContainsAny(parts[1], "\r\n\x00") {
+			return fmt.Errorf("invalid service environment variable")
+		}
+	}
 	for _, arg := range s.Args {
 		if arg == "" || strings.ContainsAny(arg, "\r\n\x00") {
 			return fmt.Errorf("invalid systemd service argument %q", arg)
@@ -84,7 +98,14 @@ func linuxSystemdUnit(request LinuxRequest) []byte {
 	for i := range args {
 		args[i] = systemdExecArgument(args[i])
 	}
-	body := fmt.Sprintf("[Unit]\nDescription=%s\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=%s\nGroup=%s\nWorkingDirectory=%s\nExecStart=%s\nRestart=on-failure\nRestartSec=3\nUMask=0077\nNoNewPrivileges=true\n\n[Install]\nWantedBy=multi-user.target\n", s.Description, s.User, s.Group, s.DataDir, strings.Join(args, " "))
+	var environment strings.Builder
+	for _, entry := range s.Environment {
+		environment.WriteString("Environment=" + systemdExecArgument(entry) + "\n")
+	}
+	if s.EnvironmentFile != "" {
+		environment.WriteString("EnvironmentFile=-" + s.EnvironmentFile + "\n")
+	}
+	body := fmt.Sprintf("[Unit]\nDescription=%s\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=%s\nGroup=%s\nWorkingDirectory=%s\n%sExecStart=%s\nRestart=on-failure\nRestartSec=3\nUMask=0077\nNoNewPrivileges=true\n\n[Install]\nWantedBy=multi-user.target\n", s.Description, s.User, s.Group, s.DataDir, environment.String(), strings.Join(args, " "))
 	return []byte(body)
 }
 func linuxServiceControlEntries(request LinuxRequest) []tarEntry {
