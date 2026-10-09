@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -459,13 +460,42 @@ func buildDataTarGz(request LinuxRequest) ([]byte, error) {
 	if request.Systemd != nil {
 		entries = append(entries, linuxServiceDataEntry(request))
 	}
-	return tarGzBytes(entries)
+	return tarGzBytes(addParentDirectoryEntries(entries))
 }
 
 type tarEntry struct {
-	name string
-	data []byte
-	mode int64
+	name  string
+	data  []byte
+	mode  int64
+	isDir bool
+}
+
+// Explicit parent directories are required by dpkg when unpacking data.tar.gz.
+// Sort by depth and name to make the tar entry order deterministic.
+func addParentDirectoryEntries(files []tarEntry) []tarEntry {
+	dirs := make(map[string]struct{})
+	for _, entry := range files {
+		clean := path.Clean(strings.TrimPrefix(entry.name, "./"))
+		for dir := path.Dir(clean); dir != "." && dir != "/"; dir = path.Dir(dir) {
+			dirs[dir] = struct{}{}
+		}
+	}
+	names := make([]string, 0, len(dirs))
+	for name := range dirs {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool {
+		di, dj := strings.Count(names[i], "/"), strings.Count(names[j], "/")
+		if di != dj {
+			return di < dj
+		}
+		return names[i] < names[j]
+	})
+	out := make([]tarEntry, 0, len(names)+len(files))
+	for _, name := range names {
+		out = append(out, tarEntry{name: "./" + name + "/", mode: 0o755, isDir: true})
+	}
+	return append(out, files...)
 }
 
 func tarGzBytes(entries []tarEntry) ([]byte, error) {
@@ -481,11 +511,19 @@ func tarGzBytes(entries []tarEntry) ([]byte, error) {
 			Uid:     0,
 			Gid:     0,
 		}
+		if entry.isDir {
+			header.Typeflag = tar.TypeDir
+			header.Size = 0
+		} else {
+			header.Typeflag = tar.TypeReg
+		}
 		if err := tw.WriteHeader(header); err != nil {
 			return nil, err
 		}
-		if _, err := tw.Write(entry.data); err != nil {
-			return nil, err
+		if !entry.isDir {
+			if _, err := tw.Write(entry.data); err != nil {
+				return nil, err
+			}
 		}
 	}
 	if err := tw.Close(); err != nil {
