@@ -4,18 +4,18 @@
 
 FRP Client Manager 已实际复用 Kit Runtime；IME Lock 已接入 Runtime Theme。AI Dev Manager、CodexPro+ 可按相同契约逐步迁移。
 
-## 安装 v0.11.0
+## 安装 v0.11.1
 
-本文对应 **v0.11.0**。本版在 Windows Installer 基线上增加 Updater Core：GitHub Release / 可替换 Provider、语义版本比较、下载进度和取消、SHA256 强校验，以及 Windows user-scope 安装版的 `InstallAndRestart`。Portable 仅支持检查和下载，machine-scope 暂保留手动安装；Windows 安装器支持中英文并防止覆盖正在运行的应用。同时保留 v0.10.1 的可选 Linux systemd 服务打包能力（需显式启用）。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
+本文对应 **v0.11.1**。在 v0.11.0 的 Windows Installer、Updater Core 和 Linux systemd 打包基线上，新增通用 Linux `servicecontrol` 服务管理 CLI 库，并统一功能清单与发布规范。本版继续包含 Updater Core：GitHub Release / 可替换 Provider、语义版本比较、下载进度和取消、SHA256 强校验，以及 Windows user-scope 安装版的 `InstallAndRestart`。Portable 仅支持检查和下载，machine-scope 暂保留手动安装；Windows 安装器支持中英文并防止覆盖正在运行的应用。同时保留 v0.10.1 的可选 Linux systemd 服务打包能力（需显式启用）。完整发布状态见 [Releases](https://github.com/wanstu/wails-desktop-kit/releases)。
 
 ~~~powershell
-go get github.com/wanstu/wails-desktop-kit@v0.11.0
+go get github.com/wanstu/wails-desktop-kit@v0.11.1
 ~~~
 
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.0
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.1
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。
@@ -30,6 +30,7 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 
 | 版本 | 说明 |
 | --- | --- |
+| `v0.11.1` | 统一 Linux servicecontrol 服务管理 CLI，保留 v0.11.0 全部功能；同步 workflow helper、版本规范与功能矩阵 |
 | `v0.11.0` | Updater Core：Check / Download / Verify、Windows 安装并重启、中文/英文 NSIS 安装器、防止覆盖运行中的程序；保留 Linux systemd 服务打包；Windows/Linux/macOS CI 与真实 Windows Installer E2E 验证 |
 | `v0.10.1` | Linux `.deb` 可选 systemd：系统用户、自启、升级与保留数据卸载 |
 | `v0.10.0` | Windows NSIS Installer、user/machine scope、静默安装/卸载、Portable/Setup/ZIP 同步发布、真实安装/覆盖/卸载与 reusable workflow E2E CI |
@@ -68,6 +69,9 @@ Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提
 | 对照首个消费者的实际接入 | [FRP 迁移记录](docs/frp-migration.md) |
 | 升级时检查行为变化 | [本轮修复说明](docs/runtime-hardening.md) |
 | 了解源码兼容与本地目录范围 | [兼容与本地开发](docs/compatibility-and-local-development.md) |
+| 检查功能是否已经在正式版实现 | [功能矩阵与消费者](docs/capabilities.md) |
+| 以后如何发布、避免分支各自有版本 | [统一发布与版本规则](docs/version-policy.md) |
+| Linux CLI 控制已安装服务 | [servicecontrol](docs/service-control.md) |
 | 已完成、验证证据和剩余工作 | [进度与待办](docs/status.md) |
 | Clipboard、Windows 托盘 Tooltip、securetransport 与 E2EE | [未来规划](docs/roadmap.md) |
 
