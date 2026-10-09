@@ -15,7 +15,7 @@ go get github.com/wanstu/wails-desktop-kit@v0.11.2
 GitHub reusable workflow 同步固定：
 
 ~~~yaml
-uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.1
+uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
 ~~~
 
 Go Module 和 workflow 是两处独立版本引用，需要分别升级。可提交的依赖不要使用本地 replace。旧应用不会自动更新；发布的可执行文件也不会因为 Kit 更新而改变。

@@ -17,8 +17,12 @@ func TestDebDataTarHasParentDirectoriesBeforeFiles(t *testing.T) {
 	input := filepath.Join(root, "demo")
 	desktop := filepath.Join(root, "demo.desktop")
 	icon := filepath.Join(root, "demo.png")
+	appstream := filepath.Join(root, "demo.metainfo.xml")
+	copyright := filepath.Join(root, "copyright")
 	for name, content := range map[string]string{
 		input: "demo binary", desktop: "[Desktop Entry]\nName=Demo\n", icon: "demo icon",
+		appstream: "<component><id>io.example.Demo</id></component>",
+		copyright: "Example license text",
 	} {
 		if err := os.WriteFile(name, []byte(content), 0o644); err != nil {
 			t.Fatal(err)
@@ -27,7 +31,8 @@ func TestDebDataTarHasParentDirectoriesBeforeFiles(t *testing.T) {
 
 	request := LinuxRequest{
 		Input: input, AppName: "demo", PackageName: "demo", Description: "Demo service",
-		DesktopFile: desktop, IconFile: icon, Systemd: &LinuxSystemdService{},
+		DesktopFile: desktop, IconFile: icon, AppStreamFile: appstream,
+		CopyrightFile: copyright, Systemd: &LinuxSystemdService{},
 	}
 	data, err := buildDataTarGz(request)
 	if err != nil {
@@ -80,6 +85,8 @@ func TestDebDataTarHasParentDirectoriesBeforeFiles(t *testing.T) {
 		"./usr/share/applications/demo.desktop",
 		"./usr/share/icons/hicolor/256x256/apps/demo.png",
 		"./lib/systemd/system/demo.service",
+		"./usr/share/metainfo/io.example.Demo.metainfo.xml",
+		"./usr/share/doc/demo/copyright",
 	} {
 		if !seenFiles[want] {
 			t.Fatalf("missing expected file %q", want)
