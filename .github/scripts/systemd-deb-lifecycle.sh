@@ -46,8 +46,10 @@ build_deb() {
 # scripts, rather than accidentally repeating a fresh install.
 build_deb 0.0.1
 build_deb 0.0.2
+build_deb 0.0.3
 deb1="$root/0.0.1/$package-linux-amd64.deb"
 deb2="$root/0.0.2/$package-linux-amd64.deb"
+deb3="$root/0.0.3/$package-linux-amd64.deb"
 
 echo '=== Install and start systemd service ==='
 sudo dpkg --install "$deb1"
@@ -71,6 +73,18 @@ second_pid="$(systemctl show -p MainPID --value "$package.service")"
 test "$second_pid" -gt 0
 test "$second_pid" != "$first_pid"
 sudo grep -Fx 'persist across upgrade, remove and purge' "$data_dir/preserved.txt" >/dev/null
+
+echo '=== Respect explicit service disable on an in-place upgrade ==='
+sudo systemctl disable --now "$package.service"
+sudo dpkg --install "$deb3"
+test "$(dpkg-query -W -f='${Version}' "$package")" = 0.0.3
+if systemctl is-active --quiet "$package.service" || systemctl is-enabled --quiet "$package.service"; then
+  echo 'ERROR: upgrading a manually disabled service must not re-enable it' >&2
+  exit 1
+fi
+sudo grep -Fx 'persist across upgrade, remove and purge' "$data_dir/preserved.txt" >/dev/null
+sudo systemctl enable --now "$package.service"
+systemctl is-active --quiet "$package.service"
 
 echo '=== Remove and verify service stopped, data retained ==='
 sudo dpkg --remove "$package"

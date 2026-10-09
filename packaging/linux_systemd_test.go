@@ -52,6 +52,22 @@ func TestLinuxSystemdDebIncludesServiceAndLifecycle(t *testing.T) {
 	if !strings.Contains(string(ctr["./prerm"]), "disable --now") {
 		t.Fatal("uninstall lifecycle missing")
 	}
+	// Reinstall after remove can have a nonempty postinst $2. A removal
+	// marker enables/start on reinstall without enabling a manually disabled
+	// service during an ordinary in-place upgrade.
+	marker := "/var/lib/mcp-center/.desktopkit-systemd-removed"
+	for name, text := range map[string]string{
+		"./postinst": marker,
+		"./prerm":    "touch '" + marker + "'",
+		"./postrm":   "rm -f -- '" + marker + "'",
+	} {
+		if !strings.Contains(string(ctr[name]), text) {
+			t.Fatalf("%s missing removal marker handling", name)
+		}
+	}
+	if !strings.Contains(string(ctr["./postinst"]), "systemctl try-restart") {
+		t.Fatal("upgrade must preserve service enabled state")
+	}
 	if strings.Contains(string(ctr["./postrm"]), "rm -rf") {
 		t.Fatal("data deletion forbidden")
 	}
