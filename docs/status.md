@@ -30,6 +30,13 @@ v0.11.1 正式基线为 `b2513b9`，远程 `origin/master` 已包含 Windows 安
 
 v0.11.1 已有通过的跨平台 CI：[运行 37886788530](https://github.com/wanstu/wails-desktop-kit/actions/runs/37886788530)。这些旧 CI 不能证明 v0.11.2 已通过；必须在新 tag 后复核并记录结果。
 
+## Kit 版本治理补充验收（v0.11.2 之后开发）
+
+- `doctor/upgrade`：覆盖消费者构建脚本中 `desktopkit@v...` 固定引用及 `desktopkit-cli-version`，并支持 `go.mod` 单行和多行 require。动态变量不被擅自改写。
+- Linux：新增在真实 systemd 宿主上对 Kit 生成的 `.deb` 执行 `dpkg --install`、升级、服务重启、`--remove`、`--purge`，验证 `/var/lib/<package>` 文件在全流程保留。CI 必须真实运行，不具备 systemd 时直接失败而不是跳过。
+
+以上需以新版本的跨平台 CI 通过为验收标准，未通过前不得宣告完成。业务应用的升级和集成不属于本次工作。
+
 ## 后续工作
 
 优先审查 ADM 和 Know Me 重复的更新状态机、Know Me 和 MCP Center 的 Linux 服务 CLI、跨项目版本诊断。抽取通用边界前先保证实际两个消费者可以使用，且不破坏既有启动、退出、权限及安装行为。MCP/OAuth 协议保持 mcp-center-core 独立，不纳入 Kit。

@@ -287,7 +287,7 @@ v0.8.0 的 CLI 可以直接检查 Go Module、reusable workflow、Wails module �
 desktopkit doctor --root .
 ~~~
 
-发现 Kit module 与 workflow 版本不一致时返回非零退出码，适合本地升级前或 CI 检查。升级时可同时修改 `go.mod` 和所有 reusable workflow 引用：
+发现 Kit module、reusable workflow `uses`、工作流 `desktopkit-cli-version` 固定输入，以及构建脚本内的 `go run/go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v...` 版本不一致时，`doctor` 会显示来源文件并返回非零退出码。`upgrade` 同时更新这些**明确写死的版本**，扫描 `.sh` / `.ps1` / `.cmd` / `.bat` / `.yml` / `.yaml` / Makefile 等脚本；不猜测 `$KIT_VERSION` 等动态变量、不重写文档或其他依赖。升级时可同时修改 `go.mod`、workflow 和脚本引用：
 
 ~~~powershell
 desktopkit upgrade --root . --to v0.11.2
