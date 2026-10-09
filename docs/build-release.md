@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [快速接入](getting-started.md) · [进度与待办](status.md)
 
-本文的 YAML 固定当前稳定版本 v0.11.2。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
+本文的 YAML 固定当前稳定版本 v0.11.3。Go Module 和 reusable workflow 是两个独立版本引用，升级时应同时检查；Go 依赖升级不会自动升级 workflow。
 
 ## 本地构建
 
@@ -40,7 +40,7 @@ v0.6.0 开始把“构建”和“打包”分开。Wails 负责生成平台程�
 Linux 当前内置 `raw`、`deb`、`tar.gz` 三种格式，并为每个产物自动生成同名 `.sha256`。本地也可以直接使用：
 
 ~~~powershell
-go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.11.2
+go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v0.11.3
 
 desktopkit package linux `
   --input .\build\bin\desktop-demo `
@@ -78,7 +78,7 @@ permissions:
 
 jobs:
   desktop:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.3
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -104,7 +104,7 @@ permissions:
 
 jobs:
   release:
-    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.2
+    uses: wanstu/wails-desktop-kit/.github/workflows/wails-desktop.yml@v0.11.3
     with:
       app-name: desktop-demo
       desktop-dir: .
@@ -136,7 +136,7 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `go-version-file` | `go.mod` | 相对仓库根目录；用于选择 Go 版本 |
 | `node-version` | `24` | 前端构建使用的 Node.js 版本 |
 | `wails-version` | `v2.15.0` | 安装的 Wails CLI 版本 |
-| `desktopkit-cli-version` | `v0.11.2` | Packaging helper 版本；必须与发布的 reusable workflow 固定在同一 Kit 版本 |
+| `desktopkit-cli-version` | `v0.11.3` | Packaging helper 版本；必须与发布的 reusable workflow 固定在同一 Kit 版本 |
 | `build-windows` / `build-linux` / `build-macos` | `true` | 选择实际构建的平台；至少启用一个 |
 | `windows-installer` | `false` | 是否额外生成 NSIS `*-setup.exe`；不影响 portable exe |
 | `windows-install-scope` | `user` | `user` 安装到 LocalAppData，不需要 UAC；`machine` 安装到 Program Files |
@@ -287,10 +287,10 @@ v0.8.0 的 CLI 可以直接检查 Go Module、reusable workflow、Wails module �
 desktopkit doctor --root .
 ~~~
 
-发现 Kit module 与 workflow 版本不一致时返回非零退出码，适合本地升级前或 CI 检查。升级时可同时修改 `go.mod` 和所有 reusable workflow 引用：
+发现 Kit module、reusable workflow `uses`、工作流 `desktopkit-cli-version` 固定输入，以及构建脚本内的 `go run/go install github.com/wanstu/wails-desktop-kit/cmd/desktopkit@v...` 版本不一致时，`doctor` 会显示来源文件并返回非零退出码。`upgrade` 同时更新这些**明确写死的版本**，扫描 `.sh` / `.ps1` / `.cmd` / `.bat` / `.yml` / `.yaml` / Makefile 等脚本；不猜测 `$KIT_VERSION` 等动态变量、不重写文档或其他依赖。升级时可同时修改 `go.mod`、workflow 和脚本引用：
 
 ~~~powershell
-desktopkit upgrade --root . --to v0.11.2
+desktopkit upgrade --root . --to v0.11.3
 ~~~
 
 默认随后执行 `go mod tidy`；只做文本升级可加 `--tidy=false`。升级命令不会改业务源码，也不会自动改变 Runtime policy。

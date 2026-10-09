@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	kitRequirePattern    = regexp.MustCompile("(?m)^\\s*github\\.com/wanstu/wails-desktop-kit\\s+(v[^\\s]+)")
-	wailsRequirePattern  = regexp.MustCompile("(?m)^\\s*github\\.com/wailsapp/wails/v2\\s+(v[^\\s]+)")
+	kitRequirePattern    = regexp.MustCompile(`(?m)^([ \t]*(?:require[ \t]+)?github\.com/wanstu/wails-desktop-kit[ \t]+)(v[^\s]+)`)
+	wailsRequirePattern  = regexp.MustCompile(`(?m)^([ \t]*(?:require[ \t]+)?github\.com/wailsapp/wails/v2[ \t]+)(v[^\s]+)`)
 	workflowRefPattern   = regexp.MustCompile("wanstu/wails-desktop-kit/\\.github/workflows/wails-desktop\\.yml@([^\\s\\\"'#]+)")
 	appNamePatternDoctor = regexp.MustCompile("(?m)^\\s*app-name:\\s*[\\\"']?([^\\s\\\"'#]+)")
 	versionPattern       = regexp.MustCompile("^v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -30,6 +30,7 @@ type repoInspection struct {
 	WorkflowVersions map[string]string
 	WailsOutputs     map[string]string
 	WorkflowAppNames map[string][]string
+	ScriptKitPins    map[string][]string
 }
 
 func runDoctor(args []string) error {
@@ -53,6 +54,9 @@ func runDoctor(args []string) error {
 	for _, path := range sortedKeys(inspection.WorkflowVersions) {
 		fmt.Printf("workflow: %s -> %s\n", path, inspection.WorkflowVersions[path])
 	}
+	for _, path := range sortedKeys(inspection.ScriptKitPins) {
+		fmt.Printf("script: %s -> %s\n", path, strings.Join(inspection.ScriptKitPins[path], ", "))
+	}
 	for _, path := range sortedKeys(inspection.WailsOutputs) {
 		fmt.Printf("wails: %s -> outputfilename=%s\n", path, inspection.WailsOutputs[path])
 	}
@@ -68,8 +72,16 @@ func runDoctor(args []string) error {
 			issues = append(issues, fmt.Sprintf("workflow %s differs from Go module %s", version, inspection.KitModuleVersion))
 		}
 	}
+	for path, pins := range inspection.ScriptKitPins {
+		for _, version := range pins {
+			versions[version] = struct{}{}
+			if inspection.KitModuleVersion != "" && version != inspection.KitModuleVersion {
+				issues = append(issues, fmt.Sprintf("script %s uses Kit %s, differs from Go module %s", path, version, inspection.KitModuleVersion))
+			}
+		}
+	}
 	if len(versions) > 1 {
-		issues = append(issues, "reusable workflow references use multiple Kit versions")
+		issues = append(issues, "workflow and script references use multiple Kit versions")
 	}
 	for workflow, names := range inspection.WorkflowAppNames {
 		for _, name := range names {
@@ -124,7 +136,7 @@ func runUpgrade(args []string) error {
 	if !kitRequirePattern.Match(data) {
 		return fmt.Errorf("go.mod does not require github.com/wanstu/wails-desktop-kit")
 	}
-	updated := kitRequirePattern.ReplaceAll(data, []byte("github.com/wanstu/wails-desktop-kit "+version))
+	updated := kitRequirePattern.ReplaceAll(data, []byte("${1}"+version))
 	if !bytes.Equal(updated, data) {
 		if err := atomicfile.Write(goMod, updated, 0o644); err != nil {
 			return err
@@ -160,6 +172,9 @@ func runUpgrade(args []string) error {
 	}); err != nil && !os.IsNotExist(err) {
 		return err
 	}
+	if err := upgradeScriptKitPins(root, version); err != nil {
+		return fmt.Errorf("update Kit script pins: %w", err)
+	}
 	if tidy {
 		command := exec.Command("go", "mod", "tidy")
 		command.Dir = root
@@ -181,16 +196,17 @@ func inspectRepository(root string) (repoInspection, error) {
 		WorkflowVersions: map[string]string{},
 		WailsOutputs:     map[string]string{},
 		WorkflowAppNames: map[string][]string{},
+		ScriptKitPins:    map[string][]string{},
 	}
 	goMod, err := os.ReadFile(filepath.Join(root, "go.mod"))
 	if err != nil {
 		return out, fmt.Errorf("read go.mod: %w", err)
 	}
-	if match := kitRequirePattern.FindSubmatch(goMod); len(match) == 2 {
-		out.KitModuleVersion = string(match[1])
+	if match := kitRequirePattern.FindSubmatch(goMod); len(match) == 3 {
+		out.KitModuleVersion = string(match[2])
 	}
-	if match := wailsRequirePattern.FindSubmatch(goMod); len(match) == 2 {
-		out.WailsVersion = string(match[1])
+	if match := wailsRequirePattern.FindSubmatch(goMod); len(match) == 3 {
+		out.WailsVersion = string(match[2])
 	}
 
 	workflowRoot := filepath.Join(root, ".github", "workflows")
@@ -256,6 +272,10 @@ func inspectRepository(root string) (repoInspection, error) {
 		return nil
 	}); err != nil {
 		return out, err
+	}
+	out.ScriptKitPins, err = inspectScriptKitPins(root)
+	if err != nil {
+		return out, fmt.Errorf("inspect Kit tool pins: %w", err)
 	}
 	return out, nil
 }

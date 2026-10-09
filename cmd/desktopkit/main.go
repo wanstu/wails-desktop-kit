@@ -29,8 +29,8 @@ Commands:
   package linux     Stage raw/deb/tar.gz and optional systemd service packages, with SHA256.
   package windows   Build an NSIS installer from an already-built Windows executable.
   buildmeta prepare Inject release version into Wails metadata and frontend build info.
-  doctor            Inspect Kit/Wails/workflow version drift in a consumer repository.
-  upgrade           Update Kit module/workflow references in a consumer repository.
+  doctor            Inspect Kit/Wails/workflow and fixed build-script Kit CLI versions.
+  upgrade           Update Kit module, workflow, and fixed build-script CLI references.
 
 Existing "desktopkit icon --input ... --output ..." remains compatible.
 `

@@ -101,6 +101,11 @@ jobs:
           grep -F 'EnvironmentFile=-/etc/default/desktopkit-deb-smoke' "$deb_root/extracted/lib/systemd/system/desktopkit-deb-smoke.service"
           dpkg-deb --ctrl-tarfile "$kit_deb" | tar -xOf - ./control | grep -F 'Installed-Size:'
 
+      - name: Real Debian systemd install / upgrade / remove / purge
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash .github/scripts/systemd-deb-lifecycle.sh
+
       - name: macOS Wails and tray lifecycle smoke
         if: runner.os == 'macOS'
         # Match the framework linked by Wails' macOS build command.

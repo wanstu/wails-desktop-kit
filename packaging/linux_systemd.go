@@ -110,12 +110,62 @@ func linuxSystemdUnit(request LinuxRequest) []byte {
 }
 func linuxServiceControlEntries(request LinuxRequest) []tarEntry {
 	s := normalizedService(request)
-	postinst := fmt.Sprintf("#!/bin/sh\nset -e\nif [ \"$1\" = \"configure\" ]; then\n  if ! getent group '%s' >/dev/null 2>&1; then\n    groupadd --system '%s'\n  fi\n  if ! getent passwd '%s' >/dev/null 2>&1; then\n    useradd --system --gid '%s' --home-dir '%s' --shell /usr/sbin/nologin '%s'\n  fi\n  install -d -m 0700 -o '%s' -g '%s' '%s'\n  if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then\n    systemctl daemon-reload\n    if [ -z \"${2:-}\" ]; then\n      systemctl enable '%s.service'\n      systemctl start '%s.service'\n    else\n      systemctl try-restart '%s.service'\n    fi\n  fi\nfi\nexit 0\n", s.Group, s.Group, s.User, s.Group, s.DataDir, s.User, s.User, s.Group, s.DataDir, s.Name, s.Name, s.Name)
-	prerm := fmt.Sprintf("#!/bin/sh\nset -e\nif [ \"$1\" = \"remove\" ] && command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then\n  systemctl disable --now '%s.service'\nfi\nexit 0\n", s.Name)
+	// Debian may pass the previously configured version even when reinstalling
+	// a package after dpkg --remove. Record the removal explicitly so that the
+	// next install starts the service, but regular upgrades still respect a
+	// user's manually disabled service.
+	removedMarker := path.Join(s.DataDir, ".desktopkit-systemd-removed")
+	postinst := fmt.Sprintf(`#!/bin/sh
+set -e
+if [ "$1" = "configure" ]; then
+  if ! getent group '%s' >/dev/null 2>&1; then
+    groupadd --system '%s'
+  fi
+  if ! getent passwd '%s' >/dev/null 2>&1; then
+    useradd --system --gid '%s' --home-dir '%s' --shell /usr/sbin/nologin '%s'
+  fi
+  install -d -m 0700 -o '%s' -g '%s' '%s'
+  if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    if [ -z "${2:-}" ] || [ -f '%s' ]; then
+      systemctl enable '%s.service'
+      systemctl start '%s.service'
+      rm -f -- '%s'
+    else
+      systemctl try-restart '%s.service'
+    fi
+  fi
+fi
+exit 0
+`, s.Group, s.Group, s.User, s.Group, s.DataDir, s.User,
+		s.User, s.Group, s.DataDir, removedMarker, s.Name, s.Name, removedMarker, s.Name)
+	prerm := fmt.Sprintf(`#!/bin/sh
+set -e
+if [ "$1" = "remove" ]; then
+  if [ -d '%s' ]; then
+    touch '%s'
+  fi
+  if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+    systemctl disable --now '%s.service'
+  fi
+fi
+exit 0
+`, s.DataDir, removedMarker, s.Name)
+	postrm := fmt.Sprintf(`#!/bin/sh
+set -e
+if [ "$1" = "purge" ]; then
+  rm -f -- '%s'
+fi
+if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+fi
+# Preserve all application data, encryption keys and databases on remove/purge.
+exit 0
+`, removedMarker)
 	return []tarEntry{
 		{name: "./postinst", data: []byte(postinst), mode: 0755},
 		{name: "./prerm", data: []byte(prerm), mode: 0755},
-		{name: "./postrm", data: []byte("#!/bin/sh\nset -e\nif command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then\n  systemctl daemon-reload\nfi\n# Preserve all application data, encryption keys and databases on remove/purge.\nexit 0\n"), mode: 0755},
+		{name: "./postrm", data: []byte(postrm), mode: 0755},
 	}
 }
 func linuxServiceDataEntry(request LinuxRequest) tarEntry {
