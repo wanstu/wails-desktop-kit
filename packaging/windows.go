@@ -2,6 +2,7 @@ package packaging
 
 import (
 	"bytes"
+	_ "embed"
 	"errors"
 	"fmt"
 	"os"
@@ -17,36 +18,42 @@ const FormatWindowsSetup Format = "setup"
 var windowsVersionPattern = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)`)
 
 type WindowsRequest struct {
-	Input             string
-	OutputDir         string
-	AppName           string
-	AssetBase         string
-	PackageVersion    string
-	Architecture      string
-	InstallScope      string
-	ProductName       string
-	Publisher         string
-	AppID             string
-	IconFile          string
-	StartMenuShortcut bool
-	DesktopShortcut   bool
-	NSISPath          string
+	Input              string
+	OutputDir          string
+	AppName            string
+	AssetBase          string
+	PackageVersion     string
+	Architecture       string
+	InstallScope       string
+	ProductName        string
+	Publisher          string
+	AppID              string
+	IconFile           string
+	StartMenuShortcut  bool
+	DesktopShortcut    bool
+	NSISPath           string
+	ConfirmStopRunning bool // Opt-in: installer asks before stopping the installed app's processes.
 }
 
 type windowsTemplateData struct {
-	Input             string
-	Output            string
-	AppExe            string
-	AppID             string
-	ProductName       string
-	Publisher         string
-	DisplayVersion    string
-	NumericVersion    string
-	InstallScope      string
-	IconFile          string
-	StartMenuShortcut bool
-	DesktopShortcut   bool
+	Input              string
+	Output             string
+	AppExe             string
+	AppID              string
+	ProductName        string
+	Publisher          string
+	DisplayVersion     string
+	NumericVersion     string
+	InstallScope       string
+	IconFile           string
+	StartMenuShortcut  bool
+	DesktopShortcut    bool
+	ConfirmStopRunning bool
+	ShutdownScript     string
 }
+
+//go:embed windows_installer_stop.ps1
+var windowsInstallerStopScript []byte
 
 var compileWindowsInstaller = func(executable, scriptPath string) error {
 	cmd := exec.Command(executable, "/V2", scriptPath)
@@ -98,19 +105,28 @@ func PackageWindows(request WindowsRequest) (Artifact, error) {
 	defer os.RemoveAll(tempDir)
 
 	scriptPath := filepath.Join(tempDir, "installer.nsi")
+	shutdownScript := ""
+	if request.ConfirmStopRunning {
+		shutdownScript = filepath.Join(tempDir, "kit-stop.ps1")
+		if err := os.WriteFile(shutdownScript, windowsInstallerStopScript, 0o600); err != nil {
+			return Artifact{}, fmt.Errorf("write installer shutdown script: %w", err)
+		}
+	}
 	data := windowsTemplateData{
-		Input:             nsisEscape(input),
-		Output:            nsisEscape(output),
-		AppExe:            nsisEscape(request.AppName + ".exe"),
-		AppID:             nsisEscape(request.AppID),
-		ProductName:       nsisEscape(request.ProductName),
-		Publisher:         nsisEscape(request.Publisher),
-		DisplayVersion:    nsisEscape(request.PackageVersion),
-		NumericVersion:    numericWindowsVersion(request.PackageVersion),
-		InstallScope:      request.InstallScope,
-		IconFile:          nsisEscape(icon),
-		StartMenuShortcut: request.StartMenuShortcut,
-		DesktopShortcut:   request.DesktopShortcut,
+		Input:              nsisEscape(input),
+		Output:             nsisEscape(output),
+		AppExe:             nsisEscape(request.AppName + ".exe"),
+		AppID:              nsisEscape(request.AppID),
+		ProductName:        nsisEscape(request.ProductName),
+		Publisher:          nsisEscape(request.Publisher),
+		DisplayVersion:     nsisEscape(request.PackageVersion),
+		NumericVersion:     numericWindowsVersion(request.PackageVersion),
+		InstallScope:       request.InstallScope,
+		IconFile:           nsisEscape(icon),
+		StartMenuShortcut:  request.StartMenuShortcut,
+		DesktopShortcut:    request.DesktopShortcut,
+		ConfirmStopRunning: request.ConfirmStopRunning,
+		ShutdownScript:     nsisEscape(shutdownScript),
 	}
 	if err := writeWindowsInstallerScript(scriptPath, data); err != nil {
 		return Artifact{}, err
@@ -303,6 +319,11 @@ LangString DesktopKitFinishText ${LANG_ENGLISH} "${PRODUCT_NAME} is ready. Click
 LangString DesktopKitFinishText ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 已准备就绪。点击“完成”退出安装程序。"
 LangString DesktopKitCloseApp ${LANG_ENGLISH} "${PRODUCT_NAME} is still running. Please exit the app (including its tray icon) and click Retry. Cancel will leave the existing installation unchanged."
 LangString DesktopKitCloseApp ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 仍在运行。请先从托盘菜单彻底退出程序，然后点击“重试”。点击“取消”将保留现有安装。"
+{{if .ConfirmStopRunning}}LangString DesktopKitConfirmStop ${LANG_ENGLISH} "${PRODUCT_NAME} is running. Close the installed application and its background processes to continue? Unsaved work and running tasks may be lost. Nothing is closed without your confirmation."
+LangString DesktopKitConfirmStop ${LANG_SIMPCHINESE} "${PRODUCT_NAME} 仍在运行。是否关闭正在运行的程序及其后台进程，然后继续安装？这可能中断正在执行的任务，请先保存工作。未经确认不会关闭任何进程。"
+LangString DesktopKitStopFailed ${LANG_ENGLISH} "Unable to close the installed application safely. Setup will stop without modifying the installation. Please close the application and retry."
+LangString DesktopKitStopFailed ${LANG_SIMPCHINESE} "未能关闭已安装的程序。安装未开始，现有安装保持不变。请检查正在运行的程序后重试。"
+{{end}}
 
 Var DesktopKitRestartAfterInstall
 
@@ -340,8 +361,24 @@ Section "Install"
   StrCpy $R3 $R1 $R2
   StrCmp $R3 '"${APP_EXE}"' 0 desktopkit_install_process_ok
   IfSilent desktopkit_app_still_running
-  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "$(DesktopKitCloseApp)" IDRETRY desktopkit_check_process
- desktopkit_app_still_running:
+{{if .ConfirmStopRunning}}  MessageBox MB_YESNO|MB_ICONEXCLAMATION "$(DesktopKitConfirmStop)" IDYES desktopkit_confirm_stop
+  SetErrorLevel 3
+  Quit
+ desktopkit_confirm_stop:
+  ; The bundled helper only touches processes whose executable image matches
+  ; the executable in $INSTDIR. It refuses unknown/unrelated same-name apps.
+  InitPluginsDir
+  SetOutPath "$PLUGINSDIR"
+  File "/oname=kit-stop.ps1" "{{.ShutdownScript}}"
+  nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\kit-stop.ps1" -InstallDir "$INSTDIR" -ExeName "${APP_EXE}"'
+  Pop $R0
+  Pop $R1
+  StrCmp $R0 "0" desktopkit_check_process
+  MessageBox MB_OK|MB_ICONSTOP "$(DesktopKitStopFailed)"
+  SetErrorLevel 4
+  Quit
+{{else}}  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "$(DesktopKitCloseApp)" IDRETRY desktopkit_check_process
+{{end}} desktopkit_app_still_running:
   SetErrorLevel 3
   Quit
  desktopkit_install_process_ok:

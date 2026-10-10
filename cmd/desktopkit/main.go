@@ -285,6 +285,7 @@ func runPackageWindows(args []string) error {
 	flags.StringVar(&request.IconFile, "icon", "", "optional .ico installer icon")
 	flags.BoolVar(&request.StartMenuShortcut, "start-menu-shortcut", true, "create Start Menu shortcuts")
 	flags.BoolVar(&request.DesktopShortcut, "desktop-shortcut", false, "create a desktop shortcut")
+	flags.BoolVar(&request.ConfirmStopRunning, "confirm-stop-running", false, "ask before stopping installed app processes (may interrupt tasks; opt-in)")
 	flags.StringVar(&request.NSISPath, "nsis", "", "makensis executable path (defaults to PATH lookup)")
 
 	if err := flags.Parse(args); err != nil {

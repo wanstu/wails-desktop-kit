@@ -205,6 +205,54 @@ jobs:
             Wait-Process -Id $runningApp.Id -ErrorAction SilentlyContinue
           }
 
+          # Opt-in interactive package must compile with its bundled helper.
+          go run ./cmd/desktopkit package windows `
+            --input $input `
+            --dist (Join-Path $root 'dist') `
+            --app-name desktopkit-smoke `
+            --asset-base desktopkit-smoke-confirm-close `
+            --package-version 0.0.0 `
+            --product-name "Desktop Kit Packaging Smoke" `
+            --publisher "Desktop Kit CI" `
+            --app-id "desktopkit-smoke" `
+            --install-scope user `
+            --confirm-stop-running=true
+          if ($LASTEXITCODE -ne 0) { throw 'confirmed-close NSIS packaging failed' }
+          if (-not (Test-Path (Join-Path $root 'dist/desktopkit-smoke-confirm-close-windows-amd64-setup.exe'))) {
+            throw 'confirmed-close Setup not produced'
+          }
+
+          # Run the same tightly scoped close helper against CI-owned fixture only.
+          # A second same-name EXE at a different path must prevent ALL shutdown.
+          $otherDir = Join-Path $root 'other'
+          New-Item -ItemType Directory -Force $otherDir | Out-Null
+          $otherExe = Join-Path $otherDir 'desktopkit-smoke.exe'
+          Copy-Item $installedExe $otherExe
+          $targetApp = Start-Process -FilePath $installedExe -ArgumentList '--hold' -PassThru
+          $otherApp = Start-Process -FilePath $otherExe -ArgumentList '--hold' -PassThru
+          try {
+            Start-Sleep -Milliseconds 600
+            & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./packaging/windows_installer_stop.ps1 -InstallDir $installDir -ExeName 'desktopkit-smoke.exe'
+            if ($LASTEXITCODE -ne 4) { throw "other-installation guard should fail closed, got $LASTEXITCODE" }
+            $targetApp.Refresh()
+            $otherApp.Refresh()
+            if ($targetApp.HasExited -or $otherApp.HasExited) { throw 'helper stopped a process without proper scope' }
+            Stop-Process -Id $otherApp.Id -Force
+            Wait-Process -Id $otherApp.Id
+            & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./packaging/windows_installer_stop.ps1 -InstallDir $installDir -ExeName 'desktopkit-smoke.exe'
+            if ($LASTEXITCODE -ne 0) { throw "confirmed-close helper failed: $LASTEXITCODE" }
+            $targetApp.Refresh()
+            if (-not $targetApp.HasExited) { throw 'confirmed-close helper did not stop test-owned process' }
+          } finally {
+            foreach ($p in @($targetApp, $otherApp)) {
+              $p.Refresh()
+              if (-not $p.HasExited) {
+                Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $p.Id -ErrorAction SilentlyContinue
+              }
+            }
+          }
+
           $restartMarker = Join-Path $installDir 'restart-smoke.txt'
           Remove-Item $restartMarker -Force -ErrorAction SilentlyContinue
 

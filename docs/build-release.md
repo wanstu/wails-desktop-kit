@@ -145,6 +145,8 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `windows-app-id` | 空 | 稳定卸载注册表 ID；空时使用 app-name |
 | `windows-start-menu-shortcut` | `true` | 是否创建开始菜单快捷方式 |
 | `windows-desktop-shortcut` | `false` | 是否创建桌面快捷方式 |
+
+Windows NSIS CLI 另支持 `--confirm-stop-running=true`（默认关闭）：交互式覆盖安装遇到同名程序时，先明确询问用户是否同意关闭**当前安装目录下的程序及同 EXE 后台进程**；确认后使用受限于安装路径的进程结束流程，可能中断正在运行的任务，随后再次确认进程全部退出再覆盖。拒绝、关闭失败或检测到不同安装路径的同名进程时，不会覆盖安装。静默安装 `/S` 永远不进行自动进程结束，仍以退出码 3 拒绝运行中覆盖。调用方必须决定是否启用，不能在没有用户确认的情况下强行停止程序。
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
 | `build-command-windows` | 空 | Windows 产品 wrapper |
