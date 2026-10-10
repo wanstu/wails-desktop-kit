@@ -88,6 +88,62 @@ func TestPackageWindowsBuildsSetupFromExistingExecutable(t *testing.T) {
 	assertChecksum(t, expected)
 }
 
+func TestWindowsInstallerConfirmedStopIsOptInAndSilentStaysBlocked(t *testing.T) {
+	root := t.TempDir()
+	for _, tc := range []struct {
+		name    string
+		enabled bool
+	}{
+		{name: "default", enabled: false},
+		{name: "confirmed", enabled: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			script := filepath.Join(root, tc.name+".nsi")
+			err := writeWindowsInstallerScript(script, windowsTemplateData{
+				Input: "C:\\build\\demo.exe", Output: "C:\\dist\\demo-setup.exe",
+				AppExe: "demo.exe", AppID: "demo", ProductName: "Demo App",
+				Publisher: "Desktop Kit", DisplayVersion: "1.2.3",
+				NumericVersion: "1.2.3.0", InstallScope: "user",
+				ConfirmStopRunning: tc.enabled, ShutdownScript: "C:\\temp\\kit-stop.ps1",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, err := os.ReadFile(script)
+			if err != nil {
+				t.Fatal(err)
+			}
+			text := string(data)
+			if strings.Contains(text, "desktopkit_confirm_stop:") != tc.enabled {
+				t.Fatalf("unexpected close implementation for enabled=%t", tc.enabled)
+			}
+			for _, invariant := range []string{
+				"IfSilent desktopkit_app_still_running",
+				"SetErrorLevel 3",
+				"IfFileExists \"$INSTDIR\\${APP_EXE}\"",
+			} {
+				if !strings.Contains(text, invariant) {
+					t.Fatalf("missing fail-closed installer check: %s", invariant)
+				}
+			}
+			if tc.enabled {
+				for _, want := range []string{
+					"MB_YESNO|MB_ICONEXCLAMATION",
+					"LangString DesktopKitConfirmStop ${LANG_SIMPCHINESE}",
+					"GetOptions", // WAITPID flow survives
+					"-File \"$PLUGINSDIR\\kit-stop.ps1\"",
+					"StrCmp $R0 \"0\" desktopkit_check_process",
+					"SetErrorLevel 4",
+				} {
+					if !strings.Contains(text, want) {
+						t.Fatalf("missing confirmed shutdown step: %s", want)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestWindowsInstallerMachineScopeAndOptionalDesktopShortcut(t *testing.T) {
 	root := t.TempDir()
 	scriptPath := filepath.Join(root, "installer.nsi")

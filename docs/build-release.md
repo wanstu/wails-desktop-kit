@@ -145,6 +145,7 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `windows-app-id` | 空 | 稳定卸载注册表 ID；空时使用 app-name |
 | `windows-start-menu-shortcut` | `true` | 是否创建开始菜单快捷方式 |
 | `windows-desktop-shortcut` | `false` | 是否创建桌面快捷方式 |
+
 | `test-command` | `go test ./...` | 设为空字符串可跳过这个公共步骤 |
 | `vet-command` | `go vet ./...` | 同上 |
 | `build-command-windows` | 空 | Windows 产品 wrapper |
@@ -166,6 +167,8 @@ Reusable workflow 会在产品 wrapper / `wails build` 之前执行 `desktopkit 
 | `linux-deb` | `false` | 兼容旧 caller；true 等价于追加 `deb` |
 | `linux-deb-description` | 空 | 兼容旧 caller；非空时覆盖新 Description |
 | `publish-release` | `false` | 是否允许进入 tag Release 发布 |
+
+Windows NSIS CLI 另支持 `--confirm-stop-running=true`（默认关闭）：交互式覆盖安装遇到同名程序时，先明确询问用户是否同意关闭**当前安装目录下的程序及同 EXE 后台进程**；确认后使用受限于安装路径的进程结束流程，可能中断正在运行的任务，随后再次确认进程全部退出再覆盖。拒绝、关闭失败或检测到不同安装路径的同名进程时，不会覆盖安装。静默安装 `/S` 永远不进行自动进程结束，仍以退出码 3 拒绝运行中覆盖。调用方必须决定是否启用，不能在没有用户确认的情况下强行停止程序。
 
 `linux-deb` 与 `linux-deb-description` 进入兼容模式，新项目优先使用 `linux-package-formats` 与 `linux-package-description`。v0.5.2 已热修旧 `.deb` control 换行；已有 caller 继续兼容。v0.8.0 起平台集合由三个 `build-*` 输入决定，Windows-only 或 Linux-only 产品不再需要复制整套 workflow。
 
