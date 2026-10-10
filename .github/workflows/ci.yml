@@ -238,7 +238,7 @@ jobs:
             $otherApp.Refresh()
             if ($targetApp.HasExited -or $otherApp.HasExited) { throw 'helper stopped a process without proper scope' }
             Stop-Process -Id $otherApp.Id -Force
-            Wait-Process -Id $otherApp.Id
+            Wait-Process -Id $otherApp.Id -ErrorAction SilentlyContinue
             & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./packaging/windows_installer_stop.ps1 -InstallDir $installDir -ExeName 'desktopkit-smoke.exe'
             if ($LASTEXITCODE -ne 0) { throw "confirmed-close helper failed: $LASTEXITCODE" }
             $targetApp.Refresh()
