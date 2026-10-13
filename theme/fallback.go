@@ -11,10 +11,10 @@ import (
 var fallbackAssets embed.FS
 
 var fallbackPackMeta = []Pack{
-	{Name: "aurora", DisplayName: "极光", Description: "蓝紫冷色，适合作为通用默认主题", File: "aurora.css"},
-	{Name: "ocean", DisplayName: "海洋", Description: "蓝青色调，清爽明亮", File: "ocean.css"},
-	{Name: "forest", DisplayName: "森林", Description: "绿色系，柔和自然", File: "forest.css"},
-	{Name: "sunset", DisplayName: "落日", Description: "橙粉暖色，更有生活感", File: "sunset.css"},
+	{Name: "aurora", DisplayName: "极光", Description: "蓝紫冷色，适合作为通用默认主题", File: "aurora.css", GradientLight: "#6366f1", GradientDark: "#818cf8"},
+	{Name: "ocean", DisplayName: "海洋", Description: "蓝青色调，清爽明亮", File: "ocean.css", GradientLight: "#0284c7", GradientDark: "#38bdf8"},
+	{Name: "forest", DisplayName: "森林", Description: "绿色系，柔和自然", File: "forest.css", GradientLight: "#168a57", GradientDark: "#4ade80"},
+	{Name: "sunset", DisplayName: "落日", Description: "橙粉暖色，更有生活感", File: "sunset.css", GradientLight: "#e85d3f", GradientDark: "#fb7185"},
 }
 
 func fallbackManifest() Manifest {

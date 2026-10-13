@@ -29,6 +29,7 @@ const (
 )
 
 var packNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,63}$`)
+var gradientHexColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 type Config struct {
 	Enabled         bool
@@ -47,11 +48,13 @@ func DefaultConfig() Config {
 }
 
 type Pack struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name"`
-	Description string `json:"description"`
-	File        string `json:"file"`
-	SHA256      string `json:"sha256"`
+	Name          string `json:"name"`
+	DisplayName   string `json:"display_name"`
+	Description   string `json:"description"`
+	File          string `json:"file"`
+	GradientLight string `json:"gradient_light,omitempty"`
+	GradientDark  string `json:"gradient_dark,omitempty"`
+	SHA256        string `json:"sha256"`
 }
 
 type Manifest struct {
@@ -496,6 +499,12 @@ func validateManifest(manifest Manifest) error {
 		}
 		if pack.File != pack.Name+".css" {
 			return fmt.Errorf("theme: pack %q file %q is invalid", pack.Name, pack.File)
+		}
+		if (pack.GradientLight == "") != (pack.GradientDark == "") {
+			return fmt.Errorf("theme: pack %q must provide both gradient colors", pack.Name)
+		}
+		if pack.GradientLight != "" && (!gradientHexColorPattern.MatchString(pack.GradientLight) || !gradientHexColorPattern.MatchString(pack.GradientDark)) {
+			return fmt.Errorf("theme: pack %q has invalid gradient colors", pack.Name)
 		}
 		if len(pack.SHA256) != sha256.Size*2 {
 			return fmt.Errorf("theme: pack %q has invalid sha256", pack.Name)

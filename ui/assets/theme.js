@@ -8,11 +8,14 @@
   let mode = "light";
   let media = null;
   let catalog = null;
+  let gradientPacks = [];
+  let gradientRevision = 0;
 
   function setResolvedTheme(theme) {
     const root = document.documentElement;
     root.setAttribute("data-dk-theme", theme);
     root.setAttribute("data-dk-theme-mode", mode);
+    if (gradientPacks.length) paintGradient();
     return theme;
   }
 
@@ -162,6 +165,7 @@
       throw new Error("Desktop Kit Theme catalog 格式无效");
     }
     catalog = next;
+    if (gradientPacks.length) paintGradient();
     return next;
   }
 
@@ -171,6 +175,102 @@
 
   function getCatalog() {
     return catalog;
+  }
+
+
+  const GRADIENT_TOKENS = [
+    "--dk-app-gradient", "--dk-sidebar-gradient", "--dk-primary-gradient",
+    "--dk-nav-gradient", "--dk-primary-contrast"
+  ];
+  const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+  function gradientColor(pack, dark) {
+    const value = dark ? pack.gradient_dark : pack.gradient_light;
+    if (typeof value !== "string" || !HEX_COLOR.test(value)) {
+      throw new Error("主题 " + pack.name + " 缺少有效渐变色，请更新 Theme Catalog");
+    }
+    return value;
+  }
+
+  function colorChannels(hex) {
+    return [1, 3, 5].map((position) => parseInt(hex.slice(position, position + 2), 16));
+  }
+
+  function rgba(hex, alpha) {
+    return "rgba(" + colorChannels(hex).join(", ") + ", " + alpha + ")";
+  }
+
+  function darken(hex, ratio) {
+    return "#" + colorChannels(hex).map((channel) =>
+      Math.round(channel * ratio).toString(16).padStart(2, "0")
+    ).join("");
+  }
+
+  function gradientStops(colors, transform) {
+    return colors.map((color, index) => {
+      const percent = Math.round(index * 100 / (colors.length - 1));
+      return transform(color) + " " + percent + "%";
+    }).join(", ");
+  }
+
+  function paintGradient() {
+    if (!gradientPacks.length || !catalog || !Array.isArray(catalog.packs)) return;
+    const dark = getResolvedTheme() === "dark";
+    const colors = gradientPacks.map((name) => {
+      const pack = currentPackInfo(name);
+      if (!pack) throw new Error("渐变所用主题不存在: " + name);
+      return gradientColor(pack, dark);
+    });
+    const root = document.documentElement;
+    root.style.setProperty("--dk-app-gradient",
+      "linear-gradient(125deg, " + gradientStops(colors, (c) => rgba(c, dark ? .22 : .15)) + ")");
+    root.style.setProperty("--dk-sidebar-gradient",
+      "linear-gradient(155deg, " + gradientStops(colors, (c) => rgba(c, dark ? .11 : .08)) + ")");
+    root.style.setProperty("--dk-primary-gradient",
+      "linear-gradient(115deg, " + gradientStops(colors, (c) => darken(c, dark ? .64 : .74)) + ")");
+    root.style.setProperty("--dk-nav-gradient",
+      "linear-gradient(100deg, " + gradientStops(colors, (c) => rgba(c, dark ? .22 : .14)) + ")");
+    root.style.setProperty("--dk-primary-contrast", "#ffffff");
+    root.setAttribute("data-dk-theme-style", "gradient");
+  }
+
+  async function applyGradient(names) {
+    if (!Array.isArray(names) || names.length < 2 || names.length > 4 ||
+        new Set(names).size !== names.length) {
+      throw new TypeError("desktopKitTheme.applyGradient: expected 2-4 distinct theme names");
+    }
+    names.forEach((name) => validatePackName(name, "desktopKitTheme.applyGradient"));
+    const request = ++gradientRevision;
+    if (!catalog) await loadCatalog();
+    // Validate every color before changing the active theme.
+    names.forEach((name) => {
+      const pack = currentPackInfo(name);
+      if (!pack) throw new Error("未知渐变主题: " + name);
+      gradientColor(pack, false);
+      gradientColor(pack, true);
+    });
+    if (request !== gradientRevision) return getGradientPacks();
+    await applyPack(names[0]);
+    if (request !== gradientRevision) return getGradientPacks();
+    gradientPacks = names.slice();
+    paintGradient();
+    return getGradientPacks();
+  }
+
+  function clearGradient() {
+    gradientRevision++;
+    gradientPacks = [];
+    const root = document.documentElement;
+    root.removeAttribute("data-dk-theme-style");
+    GRADIENT_TOKENS.forEach((name) => root.style.removeProperty(name));
+  }
+
+  function getGradientPacks() {
+    return gradientPacks.slice();
+  }
+
+  function getStyle() {
+    return gradientPacks.length ? "gradient" : "solid";
   }
 
   function dispose() {
@@ -189,6 +289,10 @@
     loadCatalog,
     refreshCatalog,
     getCatalog,
+    applyGradient,
+    clearGradient,
+    getGradientPacks,
+    getStyle,
     dispose
   });
 
