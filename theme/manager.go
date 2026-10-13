@@ -459,6 +459,12 @@ func (m *Manager) loadCachedManifest() error {
 	if err := m.validateCachedSnapshot(manifest); err != nil {
 		return fmt.Errorf("theme: cached snapshot incomplete: %w", err)
 	}
+	// Older cached manifests (e.g. Kit v0.11) have valid CSS but no
+	// gradient anchors. Restore trusted built-in anchors in memory so that
+	// the four offline fallback packs remain composable after upgrading Kit.
+	// Keep the cached CSS hashes and metadata intact; do not overwrite the
+	// last-known-good snapshot, which still backs legacy solid themes.
+	upgradeLegacyGradientMetadata(&manifest)
 	info, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -470,6 +476,25 @@ func (m *Manager) loadCachedManifest() error {
 	m.manifestSource = "cache"
 	m.mu.Unlock()
 	return nil
+}
+
+func upgradeLegacyGradientMetadata(manifest *Manifest) {
+	for i := range manifest.Packs {
+		pack := &manifest.Packs[i]
+		if pack.GradientLight != "" && pack.GradientDark != "" {
+			continue
+		}
+		for _, fallback := range fallbackPackMeta {
+			if fallback.Name != pack.Name {
+				continue
+			}
+			pack.GradientLight = fallback.GradientLight
+			pack.GradientDark = fallback.GradientDark
+			pack.GradientLightSecondary = fallback.GradientLightSecondary
+			pack.GradientDarkSecondary = fallback.GradientDarkSecondary
+			break
+		}
+	}
 }
 
 func (m *Manager) packCachePath(pack Pack) string {
