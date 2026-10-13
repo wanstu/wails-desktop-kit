@@ -180,7 +180,9 @@
 
   const GRADIENT_TOKENS = [
     "--dk-app-gradient", "--dk-sidebar-gradient", "--dk-primary-gradient",
-    "--dk-nav-gradient", "--dk-primary-contrast"
+    "--dk-nav-gradient", "--dk-primary-contrast", "--dk-panel-gradient",
+    "--dk-bg-app", "--dk-bg-elevated", "--dk-bg-subtle", "--dk-bg-muted",
+    "--dk-text", "--dk-text-secondary", "--dk-border"
   ];
   const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -206,6 +208,54 @@
     ).join("");
   }
 
+  function averageColors(colors) {
+    const sums = [0, 0, 0];
+    colors.forEach((color) => {
+      colorChannels(color).forEach((channel, index) => { sums[index] += channel; });
+    });
+    return "#" + sums.map((total) => Math.round(total / colors.length).toString(16).padStart(2, "0")).join("");
+  }
+
+  function whiteContrast(hex) {
+    const linear = colorChannels(hex).map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    const luminosity = linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+    return 1.05 / (luminosity + .05);
+  }
+
+  function accessibleGradientColor(hex) {
+    // Gradient buttons use white text. All stops must remain legible in both modes.
+    let candidate = hex;
+    while (whiteContrast(candidate) < 4.8) {
+      candidate = darken(candidate, .94);
+    }
+    return candidate;
+  }
+
+  function paintGradientSurfaces(root, dark) {
+    const keys = ["app", "elevated", "subtle", "muted", "text", "text_secondary", "border"];
+    const surfaces = gradientPacks.map((name) => {
+      const pack = currentPackInfo(name);
+      return pack && (dark ? pack.gradient_surfaces_dark : pack.gradient_surfaces_light);
+    });
+    keys.forEach((key) => root.style.removeProperty("--dk-" + ({
+      app: "bg-app", elevated: "bg-elevated", subtle: "bg-subtle", muted: "bg-muted",
+      text: "text", text_secondary: "text-secondary", border: "border"
+    })[key]));
+    if (!surfaces.every((surface) =>
+      surface && keys.every((key) => HEX_COLOR.test(surface[key])))) return false;
+    const tokens = {
+      app: "--dk-bg-app", elevated: "--dk-bg-elevated",
+      subtle: "--dk-bg-subtle", muted: "--dk-bg-muted",
+      text: "--dk-text", text_secondary: "--dk-text-secondary", border: "--dk-border"
+    };
+    keys.forEach((key) => root.style.setProperty(tokens[key],
+      averageColors(surfaces.map((surface) => surface[key]))));
+    return true;
+  }
+
   function gradientStops(colors, transform) {
     return colors.map((color, index) => {
       const percent = Math.round(index * 100 / (colors.length - 1));
@@ -227,12 +277,16 @@
       return [primary];
     });
     const root = document.documentElement;
+    const hasSurfaceComposition = paintGradientSurfaces(root, dark);
+    if (hasSurfaceComposition) root.style.setProperty("--dk-panel-gradient",
+      "linear-gradient(135deg, " + gradientStops(colors, (c) => rgba(c, dark ? .045 : .035)) + ")");
+    else root.style.removeProperty("--dk-panel-gradient");
     root.style.setProperty("--dk-app-gradient",
-      "linear-gradient(125deg, " + gradientStops(colors, (c) => rgba(c, dark ? .22 : .15)) + ")");
+      "linear-gradient(125deg, " + gradientStops(colors, (c) => rgba(c, dark ? .14 : .15)) + ")");
     root.style.setProperty("--dk-sidebar-gradient",
       "linear-gradient(155deg, " + gradientStops(colors, (c) => rgba(c, dark ? .11 : .08)) + ")");
     root.style.setProperty("--dk-primary-gradient",
-      "linear-gradient(115deg, " + gradientStops(colors, (c) => darken(c, dark ? .64 : .74)) + ")");
+      "linear-gradient(115deg, " + gradientStops(colors, (c) => accessibleGradientColor(darken(c, dark ? .64 : .74))) + ")");
     root.style.setProperty("--dk-nav-gradient",
       "linear-gradient(100deg, " + gradientStops(colors, (c) => rgba(c, dark ? .22 : .14)) + ")");
     root.style.setProperty("--dk-primary-contrast", "#ffffff");

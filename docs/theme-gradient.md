@@ -24,7 +24,8 @@ await desktopKitTheme.applyPack("forest");
 `applyGradient` 异步读取在线或本地缓存主题清单，校验主题名称以及 light/dark 配色，加载第一个主题的 CSS 后计算组合效果。重复主题、少于 2 个或多于 4 个主题会被拒绝。
 
 - 每个基础主题可提供浅色和深色各两种渐变锚点（`gradient_light`/`gradient_light_secondary`、`gradient_dark`/`gradient_dark_secondary`）。组合时按所选主题顺序串联所有锚点，而不是只取第一个主题的配色。旧主题缺少辅助锚点时自动退化为单个锚点。
-- 应用背景、侧栏、选中导航和主按钮按不同强度使用组合渐变；正文和卡片仍保持清晰可读。主题自己的 `--dk-panel-gradient` 可以为卡片增加低强度材质背景。
+- 选中主题均提供完整的 `gradient_surfaces_light/dark` 元数据时，运行时还会均衡合成背景、卡片、次级背景、正文及边框色，而不是让第一套主题独占界面外观；旧主题不提供时仍退回原来逻辑。
+- 背景、侧栏、选中导航和主按钮按不同强度使用组合渐变，卡片也有轻量光效。渐变主按钮的所有色标按白色文字至少 4.8:1 的目标自动暗化，以确保文字易读。
 - 明暗模式由 `desktopKitTheme.apply("light"|"dark"|"system")` 决定，渐变会自动响应模式变化
 - `getStyle()` 返回 `"solid"` 或 `"gradient"`
 - `getGradientPacks()` 返回当前组合的副本，可用于自行保存

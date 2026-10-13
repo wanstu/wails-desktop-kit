@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func TestCloneManifestCopiesGradientSurfaceValues(t *testing.T) {
+	original := Manifest{Packs: []Pack{{
+		Name:                  "sample",
+		GradientSurfacesLight: &GradientSurfaces{App: "#112233", Elevated: "#ffffff"},
+		GradientSurfacesDark:  &GradientSurfaces{App: "#000000"},
+	}}}
+	cloned := cloneManifest(original)
+	cloned.Packs[0].GradientSurfacesLight.App = "#445566"
+	cloned.Packs[0].GradientSurfacesDark.App = "#222222"
+	if original.Packs[0].GradientSurfacesLight.App != "#112233" ||
+		original.Packs[0].GradientSurfacesDark.App != "#000000" {
+		t.Fatal("cloned manifest mutated internal gradient surfaces")
+	}
+}
+
 func TestFallbackManifestHasUsableGradientColors(t *testing.T) {
 	manifest := fallbackManifest()
 	if len(manifest.Packs) != 4 {
@@ -46,5 +61,10 @@ func TestValidateManifestAcceptsLegacyAndRejectsInvalidGradientColors(t *testing
 	manifest.Packs[0].GradientDarkSecondary = "#zzzzzz"
 	if err := validateManifest(manifest); err == nil || !strings.Contains(err.Error(), "invalid secondary") {
 		t.Fatalf("invalid secondary color should fail: %v", err)
+	}
+	manifest.Packs[0].GradientDarkSecondary = "#445566"
+	manifest.Packs[0].GradientSurfacesLight = &GradientSurfaces{App: "#112233"}
+	if err := validateManifest(manifest); err == nil || !strings.Contains(err.Error(), "invalid gradient surfaces") {
+		t.Fatalf("unpaired gradient surfaces should fail: %v", err)
 	}
 }
