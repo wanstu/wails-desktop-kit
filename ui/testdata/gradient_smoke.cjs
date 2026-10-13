@@ -53,7 +53,8 @@ const palettes = {
 const manifest = { packs: [
   { name: "aurora", sha256: "123abc", gradient_light: "#6366f1", gradient_dark: "#818cf8", gradient_light_secondary: "#15A6A0", gradient_dark_secondary: "#B987F5", gradient_surfaces_light: palettes.aurora.light, gradient_surfaces_dark: palettes.aurora.dark },
   { name: "sakura", sha256: "456abc", gradient_light: "#d94f89", gradient_dark: "#f7a1c6", gradient_surfaces_light: palettes.sakura.light, gradient_surfaces_dark: palettes.sakura.dark },
-  { name: "desert", sha256: "678abc", gradient_light: "#b66d33", gradient_dark: "#f2b56f" }
+  { name: "desert", sha256: "678abc", gradient_light: "#b66d33", gradient_dark: "#f2b56f" },
+  { name: "forest", sha256: "789abc", gradient_light: "#168a57", gradient_dark: "#4ade80", gradient_light_secondary: "#A1B957", gradient_dark_secondary: "#D4B577" }
 ]};
 const window = {
   matchMedia() {
@@ -80,6 +81,8 @@ const kit = window.desktopKitTheme;
   assert.match(styles.get("--dk-app-gradient"), /rgba\(99, 102, 241, 0\.15\)/);
   assert.match(styles.get("--dk-app-gradient"), /rgba\(21, 166, 160, 0\.15\)/);
   assert.match(styles.get("--dk-primary-gradient"), /linear-gradient/);
+  assert.equal((styles.get("--dk-primary-gradient").match(/#[0-9a-f]{6}/gi) || []).length, 2,
+    "two base themes should produce exactly two button stops");
   assert.ok(styles.get("--dk-bg-app").startsWith("#"), "surface colors are composed");
   assert.ok(styles.get("--dk-panel-gradient").includes("linear-gradient"), "surface cards use gradient accents");
   assert.equal(kit.getGradientPacks().length, 2);
@@ -103,6 +106,26 @@ const kit = window.desktopKitTheme;
   await kit.applyGradient(["sakura", "desert", "aurora"]);
   assert.equal(kit.getGradientPacks().join(","), "sakura,desert,aurora");
   assert.equal(kit.getPack(), "sakura");
+  assert.equal((styles.get("--dk-primary-gradient").match(/#[0-9a-f]{6}/gi) || []).length, 2,
+    "three base themes must still produce only two button stops");
+  assert.equal((styles.get("--dk-app-gradient").match(/rgba\(/g) || []).length, 4,
+    "background keeps all colors including auxiliary gradient accents");
+  await kit.applyGradient(["aurora", "sakura", "desert", "forest"]);
+  const fourThemeButton = styles.get("--dk-primary-gradient");
+  assert.equal((fourThemeButton.match(/#[0-9a-f]{6}/gi) || []).length, 2,
+    "four base themes must still produce only two button stops");
+  assert.equal((styles.get("--dk-app-gradient").match(/rgba\(/g) || []).length, 6,
+    "four-theme background keeps all primary and secondary colors");
+  const expectedFirst = "#6366f1";
+  const expectedLast = "#168a57";
+  // The two button stops come from the first/last theme primaries (never intermediate colors).
+  const firstPrimary = manifest.packs.find((p) => p.name === "aurora").gradient_light;
+  const lastPrimary = manifest.packs.find((p) => p.name === "forest").gradient_light;
+  assert.equal(firstPrimary, expectedFirst);
+  assert.equal(lastPrimary, expectedLast);
+  assert.deepEqual(fourThemeButton.match(/#[0-9a-f]{6}/gi), ["#494bb2", "#106640"],
+    "four-theme button uses first and last primary, not secondary or middle colors");
+  await kit.applyGradient(["sakura", "desert", "aurora"]);
   assert.equal(styles.get("--dk-bg-app"), undefined, "legacy palette in combination should not reuse stale mixed surfaces");
   try {
     await kit.applyGradient(["aurora", "aurora"]);

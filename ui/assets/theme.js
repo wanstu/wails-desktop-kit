@@ -285,8 +285,12 @@
       "linear-gradient(125deg, " + gradientStops(colors, (c) => rgba(c, dark ? .14 : .15)) + ")");
     root.style.setProperty("--dk-sidebar-gradient",
       "linear-gradient(155deg, " + gradientStops(colors, (c) => rgba(c, dark ? .11 : .08)) + ")");
+    // Buttons are compact controls, not a full palette preview: use two primary colors.
+    // Keep the complete multi-color palette on backgrounds, cards and navigation.
+    const buttonColors = [gradientPacks[0], gradientPacks[gradientPacks.length - 1]]
+      .map((name) => gradientColor(currentPackInfo(name), dark));
     root.style.setProperty("--dk-primary-gradient",
-      "linear-gradient(115deg, " + gradientStops(colors, (c) => accessibleGradientColor(darken(c, dark ? .64 : .74))) + ")");
+      "linear-gradient(115deg, " + gradientStops(buttonColors, (c) => accessibleGradientColor(darken(c, dark ? .64 : .74))) + ")");
     root.style.setProperty("--dk-nav-gradient",
       "linear-gradient(100deg, " + gradientStops(colors, (c) => rgba(c, dark ? .22 : .14)) + ")");
     root.style.setProperty("--dk-primary-contrast", "#ffffff");
