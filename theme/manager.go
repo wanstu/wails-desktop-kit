@@ -29,6 +29,7 @@ const (
 )
 
 var packNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,63}$`)
+var gradientHexColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 type Config struct {
 	Enabled         bool
@@ -47,11 +48,40 @@ func DefaultConfig() Config {
 }
 
 type Pack struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name"`
-	Description string `json:"description"`
-	File        string `json:"file"`
-	SHA256      string `json:"sha256"`
+	Name                   string            `json:"name"`
+	DisplayName            string            `json:"display_name"`
+	Description            string            `json:"description"`
+	File                   string            `json:"file"`
+	GradientLight          string            `json:"gradient_light,omitempty"`
+	GradientDark           string            `json:"gradient_dark,omitempty"`
+	GradientLightSecondary string            `json:"gradient_light_secondary,omitempty"`
+	GradientDarkSecondary  string            `json:"gradient_dark_secondary,omitempty"`
+	Signature              bool              `json:"signature,omitempty"`
+	GradientSurfacesLight  *GradientSurfaces `json:"gradient_surfaces_light,omitempty"`
+	GradientSurfacesDark   *GradientSurfaces `json:"gradient_surfaces_dark,omitempty"`
+	SHA256                 string            `json:"sha256"`
+}
+
+type GradientSurfaces struct {
+	App           string `json:"app"`
+	Elevated      string `json:"elevated"`
+	Subtle        string `json:"subtle"`
+	Muted         string `json:"muted"`
+	Text          string `json:"text"`
+	TextSecondary string `json:"text_secondary"`
+	Border        string `json:"border"`
+}
+
+func validateGradientSurfaces(s *GradientSurfaces) bool {
+	if s == nil {
+		return true
+	}
+	for _, c := range []string{s.App, s.Elevated, s.Subtle, s.Muted, s.Text, s.TextSecondary, s.Border} {
+		if !gradientHexColorPattern.MatchString(c) {
+			return false
+		}
+	}
+	return true
 }
 
 type Manifest struct {
@@ -497,6 +527,21 @@ func validateManifest(manifest Manifest) error {
 		if pack.File != pack.Name+".css" {
 			return fmt.Errorf("theme: pack %q file %q is invalid", pack.Name, pack.File)
 		}
+		if (pack.GradientLight == "") != (pack.GradientDark == "") {
+			return fmt.Errorf("theme: pack %q must provide both gradient colors", pack.Name)
+		}
+		if pack.GradientLight != "" && (!gradientHexColorPattern.MatchString(pack.GradientLight) || !gradientHexColorPattern.MatchString(pack.GradientDark)) {
+			return fmt.Errorf("theme: pack %q has invalid gradient colors", pack.Name)
+		}
+		if (pack.GradientLightSecondary == "") != (pack.GradientDarkSecondary == "") {
+			return fmt.Errorf("theme: pack %q must provide both secondary gradient colors", pack.Name)
+		}
+		if pack.GradientLightSecondary != "" && (!gradientHexColorPattern.MatchString(pack.GradientLightSecondary) || !gradientHexColorPattern.MatchString(pack.GradientDarkSecondary)) {
+			return fmt.Errorf("theme: pack %q has invalid secondary gradient colors", pack.Name)
+		}
+		if (pack.GradientSurfacesLight == nil) != (pack.GradientSurfacesDark == nil) || !validateGradientSurfaces(pack.GradientSurfacesLight) || !validateGradientSurfaces(pack.GradientSurfacesDark) {
+			return fmt.Errorf("theme: pack %q has invalid gradient surfaces", pack.Name)
+		}
 		if len(pack.SHA256) != sha256.Size*2 {
 			return fmt.Errorf("theme: pack %q has invalid sha256", pack.Name)
 		}
@@ -568,5 +613,15 @@ func atomicWrite(path string, data []byte, mode os.FileMode) error {
 func cloneManifest(manifest Manifest) Manifest {
 	result := manifest
 	result.Packs = append([]Pack(nil), manifest.Packs...)
+	for i := range result.Packs {
+		if original := manifest.Packs[i].GradientSurfacesLight; original != nil {
+			copy := *original
+			result.Packs[i].GradientSurfacesLight = &copy
+		}
+		if original := manifest.Packs[i].GradientSurfacesDark; original != nil {
+			copy := *original
+			result.Packs[i].GradientSurfacesDark = &copy
+		}
+	}
 	return result
 }

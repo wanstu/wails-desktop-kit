@@ -3,6 +3,7 @@
   border: 1px solid var(--dk-border);
   border-radius: var(--dk-radius-lg);
   background: var(--dk-bg-elevated);
+  background-image: var(--dk-panel-gradient, none);
   box-shadow: var(--dk-shadow-panel);
 }
 
@@ -55,12 +56,18 @@
 .dk-button-primary {
   border-color: var(--dk-primary);
   background: var(--dk-primary);
+  background-image: var(--dk-primary-gradient, none);
   color: var(--dk-primary-contrast);
 }
 
 .dk-button-primary:hover {
   border-color: var(--dk-primary-hover);
   background: var(--dk-primary-hover);
+  background-image: var(--dk-primary-gradient, none);
+}
+
+:root[data-dk-theme-style="gradient"] .dk-button-primary:hover {
+  filter: brightness(1.07);
 }
 
 .dk-button-secondary {

@@ -11,10 +11,10 @@ import (
 var fallbackAssets embed.FS
 
 var fallbackPackMeta = []Pack{
-	{Name: "aurora", DisplayName: "极光", Description: "蓝紫冷色，适合作为通用默认主题", File: "aurora.css"},
-	{Name: "ocean", DisplayName: "海洋", Description: "蓝青色调，清爽明亮", File: "ocean.css"},
-	{Name: "forest", DisplayName: "森林", Description: "绿色系，柔和自然", File: "forest.css"},
-	{Name: "sunset", DisplayName: "落日", Description: "橙粉暖色，更有生活感", File: "sunset.css"},
+	{Name: "aurora", DisplayName: "极光", Description: "蓝紫冷色，适合作为通用默认主题", File: "aurora.css", GradientLight: "#6366f1", GradientDark: "#818cf8", GradientLightSecondary: "#15A6A0", GradientDarkSecondary: "#B987F5", Signature: true},
+	{Name: "ocean", DisplayName: "海洋", Description: "蓝青色调，清爽明亮", File: "ocean.css", GradientLight: "#0284c7", GradientDark: "#38bdf8", GradientLightSecondary: "#22B9C6", GradientDarkSecondary: "#5EE1C4", Signature: true},
+	{Name: "forest", DisplayName: "森林", Description: "绿色系，柔和自然", File: "forest.css", GradientLight: "#168a57", GradientDark: "#4ade80", GradientLightSecondary: "#A1B957", GradientDarkSecondary: "#D4B577", Signature: true},
+	{Name: "sunset", DisplayName: "落日", Description: "橙粉暖色，更有生活感", File: "sunset.css", GradientLight: "#e85d3f", GradientDark: "#fb7185", GradientLightSecondary: "#DF7BA3", GradientDarkSecondary: "#F49DD2", Signature: true},
 }
 
 func fallbackManifest() Manifest {

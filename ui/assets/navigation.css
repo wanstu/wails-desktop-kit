@@ -12,6 +12,7 @@
   border-right: 1px solid var(--dk-border);
   padding: 14px 12px;
   background: var(--dk-bg-elevated);
+  background-image: var(--dk-sidebar-gradient, none);
 }
 
 .dk-nav-group {
@@ -53,6 +54,7 @@
 .dk-nav-link.is-active {
   border-color: var(--dk-nav-active-border);
   background: var(--dk-nav-active-bg);
+  background-image: var(--dk-nav-gradient, none);
   color: var(--dk-nav-active-text);
   box-shadow: inset 3px 0 0 var(--dk-nav-active-accent);
 }
