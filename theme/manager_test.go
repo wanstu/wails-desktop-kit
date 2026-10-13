@@ -145,6 +145,15 @@ func TestManagerUsesCachedManifestOffline(t *testing.T) {
 	if !ok || len(manifest.Packs) != 1 || manifest.Packs[0].Name != "aurora" {
 		t.Fatalf("cached manifest unavailable: %+v ok=%v", manifest, ok)
 	}
+	if manifest.Packs[0].GradientLight != "#6366f1" || manifest.Packs[0].GradientDark != "#818cf8" ||
+		manifest.Packs[0].GradientLightSecondary == "" || manifest.Packs[0].GradientDarkSecondary == "" {
+		t.Fatalf("legacy cached fallback gradients not hydrated: %+v", manifest.Packs[0])
+	}
+	// The existing CSS remains retrievable without touching the network.
+	_, css, err := offline.EnsureStylesheet(context.Background(), "aurora")
+	if err != nil || len(css) == 0 {
+		t.Fatalf("legacy cached CSS disappeared: %v", err)
+	}
 }
 
 func TestRefreshCachesCompleteSnapshotForOfflineUse(t *testing.T) {
