@@ -48,13 +48,16 @@ func DefaultConfig() Config {
 }
 
 type Pack struct {
-	Name          string `json:"name"`
-	DisplayName   string `json:"display_name"`
-	Description   string `json:"description"`
-	File          string `json:"file"`
-	GradientLight string `json:"gradient_light,omitempty"`
-	GradientDark  string `json:"gradient_dark,omitempty"`
-	SHA256        string `json:"sha256"`
+	Name                   string `json:"name"`
+	DisplayName            string `json:"display_name"`
+	Description            string `json:"description"`
+	File                   string `json:"file"`
+	GradientLight          string `json:"gradient_light,omitempty"`
+	GradientDark           string `json:"gradient_dark,omitempty"`
+	GradientLightSecondary string `json:"gradient_light_secondary,omitempty"`
+	GradientDarkSecondary  string `json:"gradient_dark_secondary,omitempty"`
+	Signature              bool   `json:"signature,omitempty"`
+	SHA256                 string `json:"sha256"`
 }
 
 type Manifest struct {
@@ -505,6 +508,12 @@ func validateManifest(manifest Manifest) error {
 		}
 		if pack.GradientLight != "" && (!gradientHexColorPattern.MatchString(pack.GradientLight) || !gradientHexColorPattern.MatchString(pack.GradientDark)) {
 			return fmt.Errorf("theme: pack %q has invalid gradient colors", pack.Name)
+		}
+		if (pack.GradientLightSecondary == "") != (pack.GradientDarkSecondary == "") {
+			return fmt.Errorf("theme: pack %q must provide both secondary gradient colors", pack.Name)
+		}
+		if pack.GradientLightSecondary != "" && (!gradientHexColorPattern.MatchString(pack.GradientLightSecondary) || !gradientHexColorPattern.MatchString(pack.GradientDarkSecondary)) {
+			return fmt.Errorf("theme: pack %q has invalid secondary gradient colors", pack.Name)
 		}
 		if len(pack.SHA256) != sha256.Size*2 {
 			return fmt.Errorf("theme: pack %q has invalid sha256", pack.Name)

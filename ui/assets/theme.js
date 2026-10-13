@@ -216,10 +216,15 @@
   function paintGradient() {
     if (!gradientPacks.length || !catalog || !Array.isArray(catalog.packs)) return;
     const dark = getResolvedTheme() === "dark";
-    const colors = gradientPacks.map((name) => {
+    const colors = gradientPacks.flatMap((name) => {
       const pack = currentPackInfo(name);
       if (!pack) throw new Error("渐变所用主题不存在: " + name);
-      return gradientColor(pack, dark);
+      const primary = gradientColor(pack, dark);
+      const secondary = dark ? pack.gradient_dark_secondary : pack.gradient_light_secondary;
+      if (secondary && HEX_COLOR.test(secondary) && secondary.toLowerCase() !== primary.toLowerCase()) {
+        return [primary, secondary];
+      }
+      return [primary];
     });
     const root = document.documentElement;
     root.style.setProperty("--dk-app-gradient",
@@ -248,6 +253,9 @@
       if (!pack) throw new Error("未知渐变主题: " + name);
       gradientColor(pack, false);
       gradientColor(pack, true);
+      for (const color of [pack.gradient_light_secondary, pack.gradient_dark_secondary]) {
+        if (color && !HEX_COLOR.test(color)) throw new Error("主题 " + name + " 的辅助渐变色无效");
+      }
     });
     if (request !== gradientRevision) return getGradientPacks();
     await applyPack(names[0]);

@@ -41,7 +41,7 @@ const document = {
 let systemDark = false;
 let mediaChange = null;
 const manifest = { packs: [
-  { name: "aurora", sha256: "123abc", gradient_light: "#6366f1", gradient_dark: "#818cf8" },
+  { name: "aurora", sha256: "123abc", gradient_light: "#6366f1", gradient_dark: "#818cf8", gradient_light_secondary: "#15A6A0", gradient_dark_secondary: "#B987F5" },
   { name: "sakura", sha256: "456abc", gradient_light: "#d94f89", gradient_dark: "#f7a1c6" },
   { name: "desert", sha256: "678abc", gradient_light: "#b66d33", gradient_dark: "#f2b56f" }
 ]};
@@ -68,10 +68,12 @@ const kit = window.desktopKitTheme;
   assert.equal(kit.getStyle(), "gradient");
   assert.equal(attrs.get("data-dk-theme-style"), "gradient");
   assert.match(styles.get("--dk-app-gradient"), /rgba\(99, 102, 241, 0\.15\)/);
+  assert.match(styles.get("--dk-app-gradient"), /rgba\(21, 166, 160, 0\.15\)/);
   assert.match(styles.get("--dk-primary-gradient"), /linear-gradient/);
   assert.equal(kit.getGradientPacks().length, 2);
   kit.apply("dark");
   assert.match(styles.get("--dk-app-gradient"), /rgba\(129, 140, 248, 0\.22\)/);
+  assert.match(styles.get("--dk-app-gradient"), /rgba\(185, 135, 245, 0\.22\)/);
 
   kit.apply("system");
   systemDark = false;

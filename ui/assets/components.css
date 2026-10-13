@@ -3,6 +3,7 @@
   border: 1px solid var(--dk-border);
   border-radius: var(--dk-radius-lg);
   background: var(--dk-bg-elevated);
+  background-image: var(--dk-panel-gradient, none);
   box-shadow: var(--dk-shadow-panel);
 }
 
