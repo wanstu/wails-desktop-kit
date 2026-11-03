@@ -104,12 +104,15 @@ func (t *trayManager) run(ctx context.Context) {
 	// menu callbacks only enqueue work; window operations remain responsive.
 	go t.work(ctx, backend)
 	err := backend.Run(ctx, items, func(id int) {
-		if id == -1 {
+		switch id {
+		case -1:
 			t.controller.ShowWindow()
 			return
-		}
-		if id == -2 {
+		case -2:
 			t.controller.HideWindow()
+			return
+		case -3:
+			t.controller.prepareNativeQuit()
 			return
 		}
 		t.enqueue(id)
