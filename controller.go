@@ -101,6 +101,20 @@ func (c *Controller) Quit() {
 		quit(ctx)
 	}
 }
+
+// prepareNativeQuit marks a platform-native termination request before Wails
+// routes it through OnBeforeClose. Without this distinction, hide-on-close
+// policy would mistake Cmd+Q / Dock Quit for an ordinary window close.
+func (c *Controller) prepareNativeQuit() {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	if !c.stopped {
+		c.quitting = true
+	}
+	c.mu.Unlock()
+}
 func (c *Controller) beforeClose(ctx context.Context, hook func(context.Context) bool) bool {
 	c.mu.Lock()
 	if c.closing {

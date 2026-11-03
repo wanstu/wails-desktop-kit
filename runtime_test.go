@@ -71,6 +71,22 @@ func TestQuitBypassesHideAndCancellationResetsIntent(t *testing.T) {
 		t.Fatal("late ready callback resurrected shutdown")
 	}
 }
+func TestNativeQuitBypassesHideWithoutRecursiveRuntimeQuit(t *testing.T) {
+	c, _, hidden, quit := testController()
+	c.trayAvailable()
+	hiddenBeforeQuit := *hidden
+	c.prepareNativeQuit()
+	if *quit != 0 {
+		t.Fatal("native quit preparation must not recursively call the runtime quit API")
+	}
+	if c.beforeClose(context.Background(), nil) {
+		t.Fatal("native quit was converted to hide")
+	}
+	if *hidden != hiddenBeforeQuit {
+		t.Fatal("native quit hid the window instead of allowing termination")
+	}
+}
+
 func TestHideNeverBlocksManualHide(t *testing.T) {
 	c, _, hidden, _ := testController()
 	c.allowHide = false

@@ -1,6 +1,7 @@
 //go:build darwin && cgo
 
 #import <Cocoa/Cocoa.h>
+#import <objc/runtime.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -31,6 +32,46 @@ extern void dkTrayClicked(uintptr_t token, int index);
 
 static NSMutableDictionary<NSNumber*,DKTrayTarget*> *DKTrays;
 static NSMutableSet<NSNumber*> *DKClosed;
+static IMP DKOriginalShouldTerminate;
+static Class DKHookedAppDelegateClass;
+
+static void DKBroadcastWindowAction(int action) {
+    NSArray<DKTrayTarget*> *targets = DKTrays.allValues.copy;
+    for (DKTrayTarget *target in targets) {
+        dkTrayClicked(target.token, action);
+    }
+}
+
+static NSApplicationTerminateReply DKApplicationShouldTerminate(id self, SEL _cmd, NSApplication *sender) {
+    DKBroadcastWindowAction(-3);
+    if (!DKOriginalShouldTerminate) return NSTerminateNow;
+    return ((NSApplicationTerminateReply (*)(id, SEL, NSApplication *))DKOriginalShouldTerminate)(self, _cmd, sender);
+}
+
+static BOOL DKApplicationShouldHandleReopen(id self, SEL _cmd, NSApplication *sender, BOOL hasVisibleWindows) {
+    if (!hasVisibleWindows) DKBroadcastWindowAction(-1);
+    return YES;
+}
+
+static void DKInstallApplicationHooks(void) {
+    id delegate = NSApp.delegate;
+    if (!delegate) return;
+    Class cls = object_getClass(delegate);
+    if (!cls || cls == DKHookedAppDelegateClass) return;
+
+    Method terminateMethod = class_getInstanceMethod(cls, @selector(applicationShouldTerminate:));
+    if (terminateMethod) {
+        DKOriginalShouldTerminate = method_getImplementation(terminateMethod);
+        method_setImplementation(terminateMethod, (IMP)DKApplicationShouldTerminate);
+    }
+
+    SEL reopenSelector = @selector(applicationShouldHandleReopen:hasVisibleWindows:);
+    if (!class_getInstanceMethod(cls, reopenSelector)) {
+        char types[] = {@encode(BOOL)[0], '@', ':', '@', @encode(BOOL)[0], '\0'};
+        class_addMethod(cls, reopenSelector, (IMP)DKApplicationShouldHandleReopen, types);
+    }
+    DKHookedAppDelegateClass = cls;
+}
 
 static void DKOnMain(dispatch_block_t work) {
     if (NSThread.isMainThread) { work(); }
@@ -85,6 +126,7 @@ int dkTrayCreate(uintptr_t token, const char *items, const char *title, const vo
             target.item.button.action = @selector(activate:);
             [target.item.button sendActionOn:NSEventMaskLeftMouseUp | NSEventMaskRightMouseUp];
             DKTrays[key] = target;
+            DKInstallApplicationHooks();
             ok = 1;
         }
     });
